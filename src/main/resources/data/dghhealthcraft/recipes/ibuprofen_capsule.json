@@ -1,0 +1,5 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [ { "item": "minecraft:glass_bottle" }, { "item": "minecraft:paper" } ],
+  "result": { "item": "dghhealthcraft:ibuprofen_capsule", "count": 1 }
+}

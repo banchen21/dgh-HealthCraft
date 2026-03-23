@@ -1,0 +1,5 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [ { "item": "minecraft:spider_eye" }, { "item": "minecraft:paper" } ],
+  "result": { "item": "dghhealthcraft:dextromethorphan_capsule", "count": 1 }
+}

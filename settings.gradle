@@ -14,3 +14,6 @@ plugins {
 
 // Project display name
 rootProject.name = 'dgh-HealthCraft'
+
+// 使用本地 dontgethurt 源码项目作为依赖（复合构建）
+includeBuild('..\\dontgethurt')
