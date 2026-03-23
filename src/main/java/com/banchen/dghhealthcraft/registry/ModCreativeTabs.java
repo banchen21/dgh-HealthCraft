@@ -21,7 +21,7 @@ public class ModCreativeTabs {
                         output.accept(ModItems.LAMIVUDINE_CAPSULE.get());
                         output.accept(ModItems.DEXTROMETHORPHAN_CAPSULE.get());
                         output.accept(ModItems.IBUPROFEN_CAPSULE.get());
-                        output.accept(ModItems.RIBAVIRIN_CAPSULE.get());
+                        output.accept(ModItems.RIBAVIRIN_SYRINGE.get());
                         output.accept(ModItems.ORAL_TARGETED_AGENT.get());
                         output.accept(ModItems.ORAL_SEDATIVE.get());
                         output.accept(ModItems.BLOCKER.get());

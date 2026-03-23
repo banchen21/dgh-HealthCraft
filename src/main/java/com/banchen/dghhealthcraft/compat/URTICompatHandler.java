@@ -10,7 +10,6 @@ import com.lastimp.dgh.common.capability.bodyPart.bodies.Head;
 import com.lastimp.dgh.common.capability.bodyPart.bodies.Torso;
 import com.lastimp.dgh.common.enums.BodyComponents;
 import net.minecraft.network.chat.Component;
-
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -30,29 +29,122 @@ import java.util.Random;
 public class URTICompatHandler {
     private static final Random RANDOM = new Random();
 
-    // 上呼吸道感染（Upper respiratory tract infection）
-    public static final ResourceLocation URTI = ConditionAccessor.addCondition(
-            ResourceLocation.fromNamespaceAndPath(DGH_HealthcraftMod.MODID, "urti"),
-            name -> createUrtiCondition(name));
+    // 定义三个不同等级的上呼吸道感染
+    // 轻型 - 黄色（-256 是黄色）
+    public static final ResourceLocation URTI_MILD = ConditionAccessor.addCondition(
+            ResourceLocation.fromNamespaceAndPath(DGH_HealthcraftMod.MODID, "urti_mild"),
+            name -> createMildUrtiCondition(name)); // 轻型专用创建方法
 
-    private static BodyCondition createUrtiCondition(ResourceLocation name) {
+    // 中型 - 橙色（自定义橙色）
+    public static final ResourceLocation URTI_MODERATE = ConditionAccessor.addCondition(
+            ResourceLocation.fromNamespaceAndPath(DGH_HealthcraftMod.MODID, "urti_moderate"),
+            name -> createModerateUrtiCondition(name)); // 中型专用创建方法
+
+    // 重型 - 红色（-65536 是红色）
+    public static final ResourceLocation URTI_SEVERE = ConditionAccessor.addCondition(
+            ResourceLocation.fromNamespaceAndPath(DGH_HealthcraftMod.MODID, "urti_severe"),
+            name -> createSevereUrtiCondition(name)); // 重型专用创建方法
+
+    // 兼容旧代码的 URTI 引用（指向当前活动等级的病症）
+    public static ResourceLocation URTI = URTI_MILD;
+
+    /**
+     * 创建轻型 URTI 条件
+     */
+    private static BodyCondition createMildUrtiCondition(ResourceLocation name) {
+        return createUrtiCondition(name,
+                0xFFFFFF55, // 黄色 (ARGB格式: A=FF, R=FF, G=FF, B=55)
+                true, // isInjury
+                true, // isPain
+                0.0f, // healingSpeed
+                0.0f, // healingTS
+                0.0f, // minValue
+                1.0f, // maxValue
+                0.0f // defaultValue
+        );
+    }
+
+    /**
+     * 创建中型 URTI 条件
+     */
+    private static BodyCondition createModerateUrtiCondition(ResourceLocation name) {
+        return createUrtiCondition(name,
+                0xFFFFA500, // 橙色 (ARGB格式)
+                true, // isInjury
+                true, // isPain
+                0.0f, // healingSpeed
+                0.0f, // healingTS
+                0.0f, // minValue
+                1.0f, // maxValue
+                0.0f // defaultValue
+        );
+    }
+
+    /**
+     * 创建重型 URTI 条件
+     */
+    private static BodyCondition createSevereUrtiCondition(ResourceLocation name) {
+        return createUrtiCondition(name,
+                0xFFFF0000, // 红色 (ARGB格式)
+                true, // isInjury
+                true, // isPain
+                0.0f, // healingSpeed
+                0.0f, // healingTS
+                0.0f, // minValue
+                1.0f, // maxValue
+                0.0f // defaultValue
+        );
+    }
+
+    /**
+     * 通用的创建 URTI 条件的方法
+     * 
+     * @param name         条件名称
+     * @param color        显示颜色
+     * @param isInjury     是否为伤害类型
+     * @param isPain       是否为疼痛类型
+     * @param healingSpeed 自愈速度
+     * @param healingTS    自愈时间尺度
+     * @param minValue     最小值
+     * @param maxValue     最大值
+     * @param defaultValue 默认值
+     */
+    private static BodyCondition createUrtiCondition(ResourceLocation name,
+            int color,
+            boolean isInjury,
+            boolean isPain,
+            float healingSpeed,
+            float healingTS,
+            float minValue,
+            float maxValue,
+            float defaultValue) {
         try {
             Constructor<BodyCondition> ctor = BodyCondition.class.getDeclaredConstructor(ResourceLocation.class);
             ctor.setAccessible(true);
             BodyCondition cond = ctor.newInstance(name);
 
-            setField(cond, "defaultValue", 0.0f);
-            setField(cond, "minValue", 0.0f);
-            setField(cond, "maxValue", 1.0f);
-            setField(cond, "healingSpeed", 0.0f); // 无法自愈
-            setField(cond, "healingTS", 0.0f);
-            setField(cond, "isInjury", true);
-            setField(cond, "isPain", false);
+            // 设置基础数值
+            setField(cond, "defaultValue", defaultValue);
+            setField(cond, "minValue", minValue);
+            setField(cond, "maxValue", maxValue);
+            setField(cond, "healingSpeed", healingSpeed);
+            setField(cond, "healingTS", healingTS);
+
+            // 设置条件类型
+            setField(cond, "isInjury", isInjury);
+            setField(cond, "isPain", isPain);
             setField(cond, "isComfort", false);
             setField(cond, "isResist", false);
 
-            ConditionAccessor.injuryConditions.add(name);
+            // 设置显示颜色
+            setField(cond, "color", color);
+
+            // 注册到全局列表
+            if (isInjury) {
+                ConditionAccessor.injuryConditions.add(name);
+            }
             ConditionAccessor.eyeVisible.add(name);
+
             return cond;
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -129,7 +221,8 @@ public class URTICompatHandler {
         }
 
         if (RANDOM.nextFloat() < chance) {
-            applyInfection(player, URTI, 0.03f);
+            // 初始感染为轻型
+            applyInfection(player, URTI_MILD, 0.03f);
         }
     }
 
@@ -148,14 +241,40 @@ public class URTICompatHandler {
         if (infectionValue <= 0f)
             return;
 
+        // 获取当前感染等级
+        ResourceLocation currentCondition = getCurrentCondition(player);
+
         // 根据感染阶段计算进展速度
+        float progression = calculateProgression(infectionValue, player);
+
+        // 应用进展（向当前等级添加）
+        applyInfection(player, currentCondition, progression);
+
+        // 检查等级转换（当感染值跨过阈值时）
+        checkAndUpdateInfectionLevel(player, infectionValue + progression);
+
+        // 重新获取感染值（可能已经转换等级）
+        float newInfectionValue = getInfectionValue(player);
+
+        // 检查睡眠自愈（仅限轻型和中型）
+        if (player.isSleeping() && newInfectionValue < 0.7f) {
+            handleSleepHealing(player, newInfectionValue);
+        }
+
+        // 根据感染程度施加症状
+        applyURTISymptoms(player, newInfectionValue);
+    }
+
+    /**
+     * 计算疾病进展速度
+     */
+    private static float calculateProgression(float infectionValue, Player player) {
         float progression = 0.0f;
 
         // 轻型（0-0.4）到中型（0.4-0.7）的进展
         if (infectionValue < 0.4f) {
-            // 轻型到中型需要配置的天数
             int days = Config.UPPER_RESPIRATORY_INFECTION_MILD_TO_MODERATE_DAYS;
-            progression = 0.4f / (days * 24000f); // 每天 24000 tick
+            progression = 0.4f / (days * 24000f);
         }
         // 中型（0.4-0.7）到重型（0.7-1.0）的进展
         else if (infectionValue < 0.7f) {
@@ -183,15 +302,138 @@ public class URTICompatHandler {
             progression *= Config.AIDS_DISEASE_BOOST;
         }
 
-        applyInfection(player, URTI, progression);
+        return progression;
+    }
 
-        // 检查睡眠自愈（仅限轻型和中型）
-        if (player.isSleeping() && infectionValue < 0.7f) {
-            handleSleepHealing(player, infectionValue);
+    /**
+     * 检查并更新感染等级
+     */
+    private static void checkAndUpdateInfectionLevel(Player player, float infectionValue) {
+        ResourceLocation targetCondition = null;
+        float targetValue = infectionValue;
+
+        // 根据感染值确定应该使用哪个等级
+        if (infectionValue < 0.4f) {
+            targetCondition = URTI_MILD;
+        } else if (infectionValue < 0.7f) {
+            targetCondition = URTI_MODERATE;
+            targetValue = infectionValue; // 中型保持原值
+        } else {
+            targetCondition = URTI_SEVERE;
+            targetValue = Math.min(infectionValue, 1.0f);
         }
 
-        // 根据感染程度施加症状
-        applyURTISymptoms(player, infectionValue);
+        ResourceLocation currentCondition = getCurrentCondition(player);
+
+        // 如果当前没有感染，直接应用目标等级
+        if (currentCondition == null) {
+            applyInfection(player, targetCondition, targetValue);
+            return;
+        }
+
+        // 如果等级发生变化，需要迁移感染值
+        if (!currentCondition.equals(targetCondition)) {
+            // 获取当前感染值
+            float currentValue = getInfectionValue(player);
+
+            // 清除所有等级的感染（确保彻底清除）
+            clearAllInfections(player);
+
+            // 应用新的感染，使用当前感染值（不是 targetValue，因为 targetValue 可能已经包含了新加的 progression）
+            applyInfection(player, targetCondition, currentValue);
+        } else {
+            // 等级相同，确保感染值不超过最大值
+            float currentValue = getInfectionValue(player);
+            if (currentValue > 1.0f) {
+                float excess = currentValue - 1.0f;
+                applyInfection(player, targetCondition, -excess);
+            }
+        }
+    }
+
+    /**
+     * 清除所有等级的感染
+     */
+    private static void clearAllInfections(Player player) {
+        if (!HealthCapability.has(player))
+            return;
+
+        // 清除所有三个等级的感染
+        clearInfection(player, URTI_MILD);
+        clearInfection(player, URTI_MODERATE);
+        clearInfection(player, URTI_SEVERE);
+    }
+
+    /**
+     * 获取当前活动的感染条件（确保只有一个）
+     */
+    private static ResourceLocation getCurrentCondition(Player player) {
+        if (!HealthCapability.has(player))
+            return null;
+
+        return HealthCapability.getAndApply(player, health -> {
+            ResourceLocation found = null;
+
+            for (BodyComponents component : BodyComponents.values()) {
+                AbstractBody body = health.getComponent(component);
+                if (body == null)
+                    continue;
+
+                // 检查所有三个等级
+                if (body.getBodyConditions().contains(URTI_MILD)) {
+                    if (found != null && !found.equals(URTI_MILD)) {
+                    }
+                    found = URTI_MILD;
+                }
+                if (body.getBodyConditions().contains(URTI_MODERATE)) {
+                    if (found != null && !found.equals(URTI_MODERATE)) {
+                    }
+                    found = URTI_MODERATE;
+                }
+                if (body.getBodyConditions().contains(URTI_SEVERE)) {
+                    if (found != null && !found.equals(URTI_SEVERE)) {
+                    }
+                    found = URTI_SEVERE;
+                }
+            }
+
+            return found;
+        }, null);
+    }
+
+    /**
+     * 检查玩家是否有特定条件
+     */
+    private static boolean hasCondition(Player player, ResourceLocation condition) {
+        if (!HealthCapability.has(player))
+            return false;
+        return HealthCapability.getAndApply(player, health -> {
+            for (BodyComponents component : BodyComponents.values()) {
+                AbstractBody body = health.getComponent(component);
+                if (body != null && body.getBodyConditions().contains(condition)) {
+                    return true;
+                }
+            }
+            return false;
+        }, false);
+    }
+
+    /**
+     * 清除特定感染
+     */
+    private static void clearInfection(Player player, ResourceLocation condition) {
+        if (!HealthCapability.has(player))
+            return;
+        HealthCapability.getAndApply(player, health -> {
+            for (BodyComponents component : BodyComponents.values()) {
+                AbstractBody body = health.getComponent(component);
+                if (body != null && body.getBodyConditions().contains(condition)) {
+                    float currentValue = body.getConditionValue(condition);
+                    body.injury(condition, -currentValue);
+                }
+            }
+            return null;
+        }, null);
     }
 
     /**
@@ -224,8 +466,8 @@ public class URTICompatHandler {
 
                     // 治疗感染
                     float healAmount = 0.1f;
-                    applyInfection(player, URTI, -healAmount);
-
+                    ResourceLocation currentCondition = getCurrentCondition(player);
+                    applyInfection(player, currentCondition, -healAmount);
                 }
             }
         }
@@ -281,7 +523,7 @@ public class URTICompatHandler {
     }
 
     /**
-     * 获取感染值
+     * 获取感染值（从当前活动的感染条件中获取）
      */
     public static float getInfectionValue(Player player) {
         if (!HealthCapability.has(player)) {
@@ -291,10 +533,19 @@ public class URTICompatHandler {
             float maxValue = 0f;
             for (BodyComponents component : BodyComponents.values()) {
                 AbstractBody body = health.getComponent(component);
-                if (body == null || !body.getBodyConditions().contains(URTI)) {
+                if (body == null)
                     continue;
+
+                // 检查所有三个等级
+                if (body.getBodyConditions().contains(URTI_MILD)) {
+                    maxValue = Math.max(maxValue, body.getConditionValue(URTI_MILD));
                 }
-                maxValue = Math.max(maxValue, body.getConditionValue(URTI));
+                if (body.getBodyConditions().contains(URTI_MODERATE)) {
+                    maxValue = Math.max(maxValue, body.getConditionValue(URTI_MODERATE));
+                }
+                if (body.getBodyConditions().contains(URTI_SEVERE)) {
+                    maxValue = Math.max(maxValue, body.getConditionValue(URTI_SEVERE));
+                }
             }
             return maxValue;
         }, 0f);
@@ -306,16 +557,23 @@ public class URTICompatHandler {
     private static void applyInfection(Player player, ResourceLocation condition, float amount) {
         if (!HealthCapability.has(player))
             return;
+
+        // 防止在已有其他等级时添加新等级
+        if (amount > 0) { // 增加感染
+            ResourceLocation current = getCurrentCondition(player);
+            if (current != null && !current.equals(condition)) {
+                clearAllInfections(player);
+            }
+        }
+
         HealthCapability.getAndApply(player, health -> {
-            boolean modified = false;
             for (BodyComponents component : BodyComponents.values()) {
                 AbstractBody body = health.getComponent(component);
                 if (body == null || !body.getBodyConditions().contains(condition))
                     continue;
                 body.injury(condition, amount);
-                modified = true;
             }
-            return modified ? null : null;
+            return null;
         }, null);
     }
 
@@ -325,7 +583,10 @@ public class URTICompatHandler {
     public static void cureURTI(Player player, float amount) {
         if (!isURTIActive(player))
             return;
-        applyInfection(player, URTI, -amount);
+        ResourceLocation currentCondition = getCurrentCondition(player);
+        if (currentCondition != null) {
+            applyInfection(player, currentCondition, -amount);
+        }
         player.displayClientMessage(
                 Component.translatable("dghhealthcraft.msg.urti.healed", amount),
                 true);
@@ -337,8 +598,15 @@ public class URTICompatHandler {
     public static void fullyCureURTI(Player player) {
         if (!isURTIActive(player))
             return;
-        float infectionValue = getInfectionValue(player);
-        applyInfection(player, URTI, -infectionValue);
+
+        // 清除所有三个等级
+        if (hasCondition(player, URTI_MILD))
+            clearInfection(player, URTI_MILD);
+        if (hasCondition(player, URTI_MODERATE))
+            clearInfection(player, URTI_MODERATE);
+        if (hasCondition(player, URTI_SEVERE))
+            clearInfection(player, URTI_SEVERE);
+
         player.displayClientMessage(
                 Component.translatable("dghhealthcraft.msg.urti.fully_cured"),
                 true);
@@ -369,7 +637,10 @@ public class URTICompatHandler {
             // 中型，有概率降为轻型
             if (RANDOM.nextFloat() < Config.DEXTROMETHORPHAN_MODERATE_TO_MILD_CHANCE) {
                 float reduction = infectionValue - 0.3f;
-                applyInfection(player, URTI, -reduction);
+                ResourceLocation currentCondition = getCurrentCondition(player);
+                if (currentCondition != null) {
+                    applyInfection(player, currentCondition, -reduction);
+                }
                 player.displayClientMessage(
                         Component.translatable("dghhealthcraft.msg.urti.reduced_to_mild"),
                         true);
@@ -402,15 +673,16 @@ public class URTICompatHandler {
 
         float infectionValue = getInfectionValue(player);
         if (infectionValue >= 0.4f) {
-            // 重型或中型降为轻型（0.3f 是轻型的最大值）
-            float targetValue = 0.3f;
-            float reduction = infectionValue - targetValue;
-            if (reduction > 0) {
-                applyInfection(player, URTI, -reduction);
-                player.displayClientMessage(
-                        Component.translatable("dghhealthcraft.msg.urti.reduced_by_ribavirin"),
-                        true);
+            // 清除当前感染
+            ResourceLocation currentCondition = getCurrentCondition(player);
+            if (currentCondition != null) {
+                clearInfection(player, currentCondition);
             }
+            // 重新应用为轻型
+            applyInfection(player, URTI_MILD, 0.3f);
+            player.displayClientMessage(
+                    Component.translatable("dghhealthcraft.msg.urti.reduced_by_ribavirin"),
+                    true);
         } else if (infectionValue > 0) {
             // 轻型可以直接治愈
             fullyCureURTI(player);
@@ -437,8 +709,11 @@ public class URTICompatHandler {
         float infectionValue = getInfectionValue(player);
         // 暂时将重型、中型降为轻型
         if (infectionValue >= 0.4f) {
-            float reduction = infectionValue - 0.3f;
-            applyInfection(player, URTI, -reduction);
+            ResourceLocation currentCondition = getCurrentCondition(player);
+            if (currentCondition != null) {
+                clearInfection(player, currentCondition);
+            }
+            applyInfection(player, URTI_MILD, 0.3f);
             player.displayClientMessage(
                     Component.translatable("dghhealthcraft.msg.urti.temporary_relief"),
                     true);
@@ -475,9 +750,19 @@ public class URTICompatHandler {
      * 注册
      */
     public static void register() {
-        ConditionAccessor.get(URTI);
-        Head.addCondition(List.of(URTI));
-        Torso.addCondition(List.of(URTI));
-        ConditionAccessor.injuryConditions.add(URTI);
+        // 确保只注册一次
+        if (registered)
+            return;
+        registered = true;
+
+        // 注册所有三个等级
+        ConditionAccessor.get(URTI_MILD);
+        ConditionAccessor.get(URTI_MODERATE);
+        ConditionAccessor.get(URTI_SEVERE);
+
+        Head.addCondition(List.of(URTI_MILD, URTI_MODERATE, URTI_SEVERE));
+        Torso.addCondition(List.of(URTI_MILD, URTI_MODERATE, URTI_SEVERE));
     }
+
+    private static boolean registered = false;
 }

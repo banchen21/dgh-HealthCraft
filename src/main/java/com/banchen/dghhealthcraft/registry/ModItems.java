@@ -24,7 +24,7 @@ public class ModItems {
             () -> new DextromethorphanItem(new Item.Properties().stacksTo(16)));
     public static final RegistryObject<Item> IBUPROFEN_CAPSULE = ITEMS.register("ibuprofen_capsule",
             () -> new IbuprofenItem(new Item.Properties().stacksTo(16)));
-    public static final RegistryObject<Item> RIBAVIRIN_CAPSULE = ITEMS.register("ribavirin_capsule",
+    public static final RegistryObject<Item> RIBAVIRIN_SYRINGE = ITEMS.register("ribavirin_syringe",
             () -> new RibavirinItem(new Item.Properties().stacksTo(16)));
 
     public static final RegistryObject<Item> ORAL_TARGETED_AGENT = ITEMS.register("oral_targeted_agent",

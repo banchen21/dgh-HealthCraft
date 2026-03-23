@@ -6,6 +6,7 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 public class ConfigSpec {
     
@@ -62,11 +63,19 @@ public class ConfigSpec {
         public final ForgeConfigSpec.BooleanValue ribavirinImmediateEffect;
         public final ForgeConfigSpec.IntValue ribavirinCooldownSeconds;
         public final ForgeConfigSpec.DoubleValue broadSpectrumAntibioticsSepsisCureChance;
-        
+
         public final ForgeConfigSpec.BooleanValue syringeContaminationEnabled;
         public final ForgeConfigSpec.IntValue syringeContaminationDurationSeconds;
         
         public final ForgeConfigSpec.IntValue blockingAgentCorpsePoisonImmunityDurationSeconds;
+
+        public final ForgeConfigSpec.ConfigValue<List<? extends String>> foodNutritionWater;
+        public final ForgeConfigSpec.ConfigValue<List<? extends String>> foodNutritionSugar;
+        public final ForgeConfigSpec.ConfigValue<List<? extends String>> foodNutritionFat;
+        public final ForgeConfigSpec.ConfigValue<List<? extends String>> foodNutritionProtein;
+        public final ForgeConfigSpec.ConfigValue<List<? extends String>> foodNutritionSalt;
+        public final ForgeConfigSpec.ConfigValue<List<? extends String>> foodNutritionVitamin;
+        public final ForgeConfigSpec.ConfigValue<List<? extends String>> foodNutritionFiber;
         
         Common(ForgeConfigSpec.Builder builder) {
             builder.comment("DGH-HealthCraft Configuration")
@@ -268,6 +277,31 @@ public class ConfigSpec {
                     .comment("Duration of corpse poison immunity (seconds)")
                     .defineInRange("blockingAgentCorpsePoisonImmunityDurationSeconds", 300, 0, 3600);
             builder.pop();
+
+            builder.comment("Food Nutrition Mapping")
+                   .push("food_nutrition");
+            foodNutritionWater = builder
+                    .comment("Water mapping entries: item=value")
+                    .defineList("water", java.util.Collections.emptyList(), obj -> obj instanceof String);
+            foodNutritionSugar = builder
+                    .comment("Sugar mapping entries: item=value")
+                    .defineList("sugar", java.util.Collections.emptyList(), obj -> obj instanceof String);
+            foodNutritionFat = builder
+                    .comment("Fat mapping entries: item=value")
+                    .defineList("fat", java.util.Collections.emptyList(), obj -> obj instanceof String);
+            foodNutritionProtein = builder
+                    .comment("Protein mapping entries: item=value")
+                    .defineList("protein", java.util.Collections.emptyList(), obj -> obj instanceof String);
+            foodNutritionSalt = builder
+                    .comment("Salt mapping entries: item=value")
+                    .defineList("salt", java.util.Collections.emptyList(), obj -> obj instanceof String);
+            foodNutritionVitamin = builder
+                    .comment("Vitamin mapping entries: item=value")
+                    .defineList("vitamin", java.util.Collections.emptyList(), obj -> obj instanceof String);
+            foodNutritionFiber = builder
+                    .comment("Fiber mapping entries: item=value")
+                    .defineList("fiber", java.util.Collections.emptyList(), obj -> obj instanceof String);
+            builder.pop();
             
             builder.pop();
         }
@@ -353,7 +387,16 @@ public class ConfigSpec {
         
         // Blocking agent
         Config.BLOCKING_AGENT_CORPSE_POISON_IMMUNITY_DURATION_SECONDS = COMMON.blockingAgentCorpsePoisonImmunityDurationSeconds.get().floatValue();
-        
+
+        // Food nutrition mapping: use per-nutrient direct lists only
+        Config.loadFoodNutritionByNutrientEntries("water", COMMON.foodNutritionWater.get());
+        Config.loadFoodNutritionByNutrientEntries("sugar", COMMON.foodNutritionSugar.get());
+        Config.loadFoodNutritionByNutrientEntries("fat", COMMON.foodNutritionFat.get());
+        Config.loadFoodNutritionByNutrientEntries("protein", COMMON.foodNutritionProtein.get());
+        Config.loadFoodNutritionByNutrientEntries("salt", COMMON.foodNutritionSalt.get());
+        Config.loadFoodNutritionByNutrientEntries("vitamin", COMMON.foodNutritionVitamin.get());
+        Config.loadFoodNutritionByNutrientEntries("fiber", COMMON.foodNutritionFiber.get());
+
         System.out.println("[DGH-HealthCraft] Configuration synced!");
     }
 }

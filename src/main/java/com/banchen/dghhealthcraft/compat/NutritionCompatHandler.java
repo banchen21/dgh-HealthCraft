@@ -5,14 +5,18 @@ import com.lastimp.dgh.common.capability.HealthCapability;
 import com.lastimp.dgh.common.enums.BodyComponents;
 import com.banchen.dghhealthcraft.DGH_HealthcraftMod;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.living.LivingEntityUseItemEvent;
 import net.minecraftforge.event.entity.living.LivingEvent.LivingJumpEvent;
+import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.entity.player.PlayerSleepInBedEvent;
+import net.minecraftforge.event.entity.player.PlayerEvent.PlayerLoggedOutEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
@@ -25,11 +29,36 @@ import java.util.WeakHashMap;
 public class NutritionCompatHandler {
     private static final Map<UUID, NutritionState> states = new WeakHashMap<>();
     private static final Random random = new Random();
+    private static final String NBT_KEY = "dgh_nutrition_state";
 
     private record NutritionState(double water, double sugar, double fat, double protein, double salt, double vitamin,
             double fiber) {
         static NutritionState create() {
             return new NutritionState(1.0, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5);
+        }
+
+        static NutritionState fromTag(CompoundTag tag) {
+            if (tag == null || !tag.contains("water")) return create();
+            return new NutritionState(
+                    tag.getDouble("water"),
+                    tag.getDouble("sugar"),
+                    tag.getDouble("fat"),
+                    tag.getDouble("protein"),
+                    tag.getDouble("salt"),
+                    tag.getDouble("vitamin"),
+                    tag.getDouble("fiber"));
+        }
+
+        CompoundTag toTag() {
+            CompoundTag tag = new CompoundTag();
+            tag.putDouble("water", water);
+            tag.putDouble("sugar", sugar);
+            tag.putDouble("fat", fat);
+            tag.putDouble("protein", protein);
+            tag.putDouble("salt", salt);
+            tag.putDouble("vitamin", vitamin);
+            tag.putDouble("fiber", fiber);
+            return tag;
         }
 
         NutritionState tick(boolean sleeping, boolean jumping) {
@@ -73,11 +102,31 @@ public class NutritionCompatHandler {
     }
 
     private static NutritionState state(Player player) {
-        return states.computeIfAbsent(player.getUUID(), uuid -> NutritionState.create());
+        return states.computeIfAbsent(player.getUUID(), uuid -> loadFromPlayer(player));
     }
 
     private static void setState(Player player, NutritionState state) {
         states.put(player.getUUID(), state);
+        saveToPlayer(player, state);
+    }
+
+    private static NutritionState loadFromPlayer(Player player) {
+        CompoundTag persistent = player.getPersistentData();
+        if (persistent == null) {
+            return NutritionState.create();
+        }
+
+        if (persistent.contains(NBT_KEY)) {
+            return NutritionState.fromTag(persistent.getCompound(NBT_KEY));
+        }
+
+        return NutritionState.create();
+    }
+
+    private static void saveToPlayer(Player player, NutritionState state) {
+        CompoundTag persistent = player.getPersistentData();
+        if (persistent == null) return;
+        persistent.put(NBT_KEY, state.toTag());
     }
 
     // ==================== 获取营养值方法 ====================
@@ -304,10 +353,9 @@ public class NutritionCompatHandler {
             }
         }
 
-        // 低蛋白时增加疾病风险（与 HIV 和 URTI 联动）
+        // 低蛋白仅产生营养性症状，不再直接触发 HIV/脓毒症
         if (protein < Config.PROTEIN_NORMAL_MIN && random.nextDouble() < 0.0005) {
-            applyCondition(player, HIVCompatHandler.HIV, 0.005f);
-            applyCondition(player, URTICompatHandler.URTI, 0.005f);
+            player.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 40, 0));
         }
 
         // 脓毒症相关衰竭
@@ -399,6 +447,9 @@ public class NutritionCompatHandler {
         if (!(event.getEntity() instanceof Player player))
             return;
 
+        // 食物营养值配置
+        applyFoodNutrition(player, event.getItem());
+
         NutritionState st = state(player);
         double protein = st.protein * 100;
         double vitamin = st.vitamin * 100;
@@ -419,6 +470,54 @@ public class NutritionCompatHandler {
             // 消耗少量蛋白质
             addProtein(player, -2.0);
         }
+    }
+
+    @SubscribeEvent
+    public static void onPlayerClone(PlayerEvent.Clone event) {
+        Player original = event.getOriginal();
+        if (original == null) return;
+        Entity entity = event.getEntity();
+        if (!(entity instanceof Player)) return;
+        Player player = (Player) entity;
+
+        if (event.isWasDeath()) {
+            NutritionState defaultState = NutritionState.create();
+            states.put(player.getUUID(), defaultState);
+            saveToPlayer(player, defaultState);
+        } else {
+            NutritionState originalState = state(original);
+            states.put(player.getUUID(), originalState);
+            saveToPlayer(player, originalState);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onPlayerLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
+        Entity entity = event.getEntity();
+        if (!(entity instanceof Player)) return;
+        Player player = (Player) entity;
+        states.remove(player.getUUID());
+    }
+
+    private static void applyFoodNutrition(Player player, net.minecraft.world.item.ItemStack stack) {
+        if (stack == null || stack.isEmpty())
+            return;
+
+        String key = ForgeRegistries.ITEMS.getKey(stack.getItem()).toString();
+        Config.NutritionValues values = Config.FOOD_NUTRITION_MAP.get(key);
+        if (values == null)
+            return;
+
+        if (values.water != 0) addWater(player, values.water);
+        if (values.sugar != 0) addSugar(player, values.sugar);
+        if (values.fat != 0) addFat(player, values.fat);
+        if (values.protein != 0) addProtein(player, values.protein);
+        if (values.salt != 0) addSalt(player, values.salt);
+        if (values.vitamin != 0) addVitamin(player, values.vitamin);
+        if (values.fiber != 0) addFiber(player, values.fiber);
+
+        player.displayClientMessage(net.minecraft.network.chat.Component.translatable(
+                "dghhealthcraft.msg.nutrition_from_food", key), true);
     }
 
     private static void applyCondition(Player player, net.minecraft.resources.ResourceLocation condition,

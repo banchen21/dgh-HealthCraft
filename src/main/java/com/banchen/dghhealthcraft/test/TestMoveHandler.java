@@ -8,14 +8,9 @@ import com.lastimp.dgh.common.enums.BodyComponents;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.level.Level;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-
-import java.util.Map;
-import java.util.UUID;
-import java.util.WeakHashMap;
 
 @Mod.EventBusSubscriber(modid = DGH_HealthcraftMod.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class TestMoveHandler {
@@ -28,7 +23,8 @@ public class TestMoveHandler {
                                     ServerPlayer player = context.getSource().getPlayerOrException();
                                     applyAllTestDiseases(player);
                                     context.getSource().sendSuccess(
-                                            () -> Component.literal("已注入五个病症（URTI/SEPSIS/HIV/PTSD/ZOMBIE_VIRUS）"), true);
+                                            () -> Component.literal("已注入五个病症（URTI/SEPSIS/HIV/PTSD/ZOMBIE_VIRUS）"),
+                                            true);
                                     return 1;
                                 })));
     }
@@ -38,14 +34,15 @@ public class TestMoveHandler {
             return;
 
         // 我们将注入固定值给已注册体部条件
-        applyCondition(player, URTICompatHandler.URTI, 0.5f);
-        applyCondition(player, SepsisCompatHandler.SEPSIS, 0.5f);
-        applyCondition(player, HIVCompatHandler.HIV, 0.5f);
-        applyCondition(player, PTSDCompatHandler.PTSD, 0.5f);
-        applyCondition(player, ZombieVirusCompatHandler.ZOMBIE_VIRUS, 0.5f);
+        applyCondition(player, URTICompatHandler.URTI, 0.2f);
+        applyCondition(player, SepsisCompatHandler.SEPSIS, 0.2f);
+        applyCondition(player, HIVCompatHandler.HIV, 0.2f);
+        applyCondition(player, PTSDCompatHandler.PTSD, 0.2f);
+        applyCondition(player, ZombieVirusCompatHandler.ZOMBIE_VIRUS, 0.2f);
     }
 
-    private static void applyCondition(ServerPlayer player, net.minecraft.resources.ResourceLocation condition, float amount) {
+    private static void applyCondition(ServerPlayer player, net.minecraft.resources.ResourceLocation condition,
+            float amount) {
         if (!HealthCapability.has(player))
             return;
 
@@ -62,4 +59,4 @@ public class TestMoveHandler {
         }, null);
     }
 
-    }
+}

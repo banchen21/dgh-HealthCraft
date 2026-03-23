@@ -9,6 +9,7 @@ import com.lastimp.dgh.common.capability.bodyPart.base.BodyCondition;
 import com.lastimp.dgh.common.capability.bodyPart.bodies.Blood;
 import com.lastimp.dgh.common.entry.register.ModItems;
 import com.lastimp.dgh.common.enums.BodyComponents;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -29,28 +30,88 @@ import java.util.Random;
 public class SepsisCompatHandler {
     private static final Random RANDOM = new Random();
 
-    // 脓毒症（Sepsis）
-    public static final ResourceLocation SEPSIS = ConditionAccessor.addCondition(
-            ResourceLocation.fromNamespaceAndPath(DGH_HealthcraftMod.MODID, "sepsis"),
-            name -> createSepsisCondition(name));
+    // 定义三个不同等级的脓毒症
+    // 轻度 - 黄色
+    public static final ResourceLocation SEPSIS_MILD = ConditionAccessor.addCondition(
+            ResourceLocation.fromNamespaceAndPath(DGH_HealthcraftMod.MODID, "sepsis_mild"),
+            name -> createMildSepsisCondition(name));
 
-    private static BodyCondition createSepsisCondition(ResourceLocation name) {
+    // 中度 - 橙色
+    public static final ResourceLocation SEPSIS_MODERATE = ConditionAccessor.addCondition(
+            ResourceLocation.fromNamespaceAndPath(DGH_HealthcraftMod.MODID, "sepsis_moderate"),
+            name -> createModerateSepsisCondition(name));
+
+    // 重度 - 红色
+    public static final ResourceLocation SEPSIS_SEVERE = ConditionAccessor.addCondition(
+            ResourceLocation.fromNamespaceAndPath(DGH_HealthcraftMod.MODID, "sepsis_severe"),
+            name -> createSevereSepsisCondition(name));
+
+    // 兼容旧代码的引用
+    public static ResourceLocation SEPSIS = SEPSIS_MILD;
+
+    /**
+     * 创建轻度脓毒症条件（黄色）
+     */
+    private static BodyCondition createMildSepsisCondition(ResourceLocation name) {
+        return createSepsisCondition(name,
+                0xFFFFFF55, // 黄色
+                true, true, 0.0f, 0.5f, 0.0f, 1.0f, 0.0f);
+    }
+
+    /**
+     * 创建中度脓毒症条件（橙色）
+     */
+    private static BodyCondition createModerateSepsisCondition(ResourceLocation name) {
+        return createSepsisCondition(name,
+                0xFFFFA500, // 橙色
+                true, true, 0.0f, 0.5f, 0.0f, 1.0f, 0.0f);
+    }
+
+    /**
+     * 创建重度脓毒症条件（红色）
+     */
+    private static BodyCondition createSevereSepsisCondition(ResourceLocation name) {
+        return createSepsisCondition(name,
+                0xFFFF0000, // 红色
+                true, true, 0.0f, 0.5f, 0.0f, 1.0f, 0.0f);
+    }
+
+    /**
+     * 通用的创建脓毒症条件方法
+     */
+    private static BodyCondition createSepsisCondition(ResourceLocation name,
+            int color,
+            boolean isInjury,
+            boolean isPain,
+            float healingSpeed,
+            float healingTS,
+            float minValue,
+            float maxValue,
+            float defaultValue) {
         try {
             Constructor<BodyCondition> ctor = BodyCondition.class.getDeclaredConstructor(ResourceLocation.class);
             ctor.setAccessible(true);
             BodyCondition cond = ctor.newInstance(name);
 
-            setField(cond, "defaultValue", 0.0f);
-            setField(cond, "minValue", 0.0f);
-            setField(cond, "maxValue", 1.0f);
-            setField(cond, "healingSpeed", 0.0f); // 无法自愈
-            setField(cond, "healingTS", 0.5f);
-            setField(cond, "isInjury", true);
-            setField(cond, "isPain", true);
+            setField(cond, "defaultValue", defaultValue);
+            setField(cond, "minValue", minValue);
+            setField(cond, "maxValue", maxValue);
+            setField(cond, "healingSpeed", healingSpeed);
+            setField(cond, "healingTS", healingTS);
+            setField(cond, "isInjury", isInjury);
+            setField(cond, "isPain", isPain);
             setField(cond, "isComfort", false);
             setField(cond, "isResist", false);
+            setField(cond, "color", color);
 
+            if (isInjury) {
+                ConditionAccessor.injuryConditions.add(name);
+            }
+            if (isPain) {
+                ConditionAccessor.painConditions.add(name);
+            }
             ConditionAccessor.eyeVisible.add(name);
+
             return cond;
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -74,27 +135,26 @@ public class SepsisCompatHandler {
         if (player.level().isClientSide())
             return;
 
-        // 原 mod 广谱抗生素直接治疗脓毒症
+        // 使用广谱抗生素治疗脓毒症
         ItemStack used = player.getItemInHand(event.getHand());
         if (!used.isEmpty() && used.getItem() == ModItems.ANTIBIOTICS.get()) {
-            // 尝试治愈脓毒症
             if (isSepsisActive(player)) {
                 boolean cured = cureSepsis(player);
-                player.sendSystemMessage(net.minecraft.network.chat.Component.translatable(
-                        cured ? "dghhealthcraft.msg.antibiotic_treated_sepsis" : "dghhealthcraft.msg.antibiotic_failed_sepsis"));
+                player.sendSystemMessage(Component.translatable(
+                        cured ? "dghhealthcraft.msg.antibiotic_treated_sepsis"
+                                : "dghhealthcraft.msg.antibiotic_failed_sepsis"));
             } else {
-                player.sendSystemMessage(net.minecraft.network.chat.Component.translatable(
-                        "dghhealthcraft.msg.antibiotic_no_sepsis"));
+                player.sendSystemMessage(Component.translatable("dghhealthcraft.msg.antibiotic_no_sepsis"));
             }
             return;
         }
 
-        // 检查是否使用药针（此处需要根据实际物品判断）
-        // 如果使用污染药针，触发感染
+        // 检查是否使用污染药针
         if (isContaminatedSyringe(used, player.level())) {
             if (RANDOM.nextFloat() < Config.SEPSIS_CONTAMINATED_SYRINGE_CHANCE) {
-                applySepsisInfection(player, 0.05f);
-                // TODO 发送感染提示
+                applyInfection(player, SEPSIS_MILD, 0.03f);
+                player.displayClientMessage(
+                        Component.translatable("dghhealthcraft.msg.sepsis.infected"), true);
             }
         }
     }
@@ -104,20 +164,24 @@ public class SepsisCompatHandler {
      */
     @SubscribeEvent
     public static void onLivingDamage(LivingDamageEvent event) {
-        if (!(event.getEntity() instanceof Player))
+        if (!(event.getEntity() instanceof Player player))
             return;
-        Player player = (Player) event.getEntity();
         if (player.level().isClientSide())
             return;
 
-        float sepsisValue = getSepsisValue(player);
+        float sepsisValue = getInfectionValue(player);
         if (sepsisValue <= 0)
             return;
 
-        // 受到伤害时脓毒症加重
         float damage = event.getAmount();
         float progression = damage * 0.001f;
-        applySepsisProgression(player, progression);
+
+        ResourceLocation currentCondition = getCurrentCondition(player);
+        if (currentCondition != null) {
+            applyInfection(player, currentCondition, progression);
+            // 检查等级转换
+            checkAndUpdateInfectionLevel(player, sepsisValue + progression);
+        }
     }
 
     /**
@@ -131,29 +195,28 @@ public class SepsisCompatHandler {
         if (player.level().isClientSide())
             return;
 
-        float sepsisValue = getSepsisValue(player);
+        float sepsisValue = getInfectionValue(player);
         if (sepsisValue <= 0)
             return;
 
-        // 脓毒症恶化（无法自愈）
-        float progression = 0.00005f;
+        // 获取当前感染等级
+        ResourceLocation currentCondition = getCurrentCondition(player);
 
-        // 低蛋白加速恶化
-        double protein = NutritionCompatHandler.getProtein(player);
-        if (protein < 20.0f) {
-            progression *= Config.LOW_PROTEIN_DISEASE_BOOST;
-        }
+        // 计算恶化速度
+        float progression = calculateProgression(sepsisValue, player);
 
-        // 艾滋病加速恶化
-        if (HIVCompatHandler.isHIVActive(player)) {
-            progression *= Config.AIDS_DISEASE_BOOST;
-        }
+        // 应用进展
+        applyInfection(player, currentCondition, progression);
 
-        applySepsisProgression(player, progression);
+        // 检查等级转换
+        checkAndUpdateInfectionLevel(player, sepsisValue + progression);
+
+        // 重新获取感染值
+        float newInfectionValue = getInfectionValue(player);
 
         // 行动时额外消耗糖类和油脂
         if (player.isSprinting() || player.isSwimming() || player.isFallFlying()) {
-            consumeExtraNutrients(player);
+            consumeExtraNutrients(player, newInfectionValue);
         }
 
         // 定期中毒效果
@@ -162,14 +225,137 @@ public class SepsisCompatHandler {
         }
 
         // 根据感染程度施加症状
-        applySepsisSymptoms(player, sepsisValue);
+        applySepsisSymptoms(player, newInfectionValue);
+    }
+
+    /**
+     * 计算脓毒症恶化速度
+     */
+    private static float calculateProgression(float currentValue, Player player) {
+        float progression;
+
+        // 轻度（0-0.3）到中度（0.3-0.6）的进展
+        if (currentValue < 0.3f) {
+            progression = 0.00003f;
+        }
+        // 中度（0.3-0.6）到重度（0.6-1.0）的进展
+        else if (currentValue < 0.6f) {
+            progression = 0.00005f;
+        }
+        // 重度持续恶化
+        else {
+            progression = 0.00008f;
+        }
+
+        // 低蛋白加速恶化
+        double protein = NutritionCompatHandler.getProtein(player);
+        if (protein < Config.PROTEIN_NORMAL_MIN) {
+            progression *= Config.LOW_PROTEIN_DISEASE_BOOST;
+        }
+
+        // 艾滋病加速恶化
+        if (HIVCompatHandler.isHIVActive(player)) {
+            progression *= Config.AIDS_DISEASE_BOOST;
+        }
+
+        return progression;
+    }
+
+    /**
+     * 检查并更新感染等级
+     */
+    private static void checkAndUpdateInfectionLevel(Player player, float infectionValue) {
+        ResourceLocation targetCondition;
+        float targetValue = infectionValue;
+
+        if (infectionValue < 0.3f) {
+            targetCondition = SEPSIS_MILD;
+        } else if (infectionValue < 0.6f) {
+            targetCondition = SEPSIS_MODERATE;
+        } else {
+            targetCondition = SEPSIS_SEVERE;
+            targetValue = Math.min(infectionValue, 1.0f);
+        }
+
+        ResourceLocation currentCondition = getCurrentCondition(player);
+
+        if (currentCondition == null) {
+            applyInfection(player, targetCondition, targetValue);
+            return;
+        }
+
+        if (!currentCondition.equals(targetCondition)) {
+            float currentValue = getInfectionValue(player);
+            clearAllInfections(player);
+            applyInfection(player, targetCondition, currentValue);
+        } else {
+            float currentValue = getInfectionValue(player);
+            if (currentValue > 1.0f) {
+                float excess = currentValue - 1.0f;
+                applyInfection(player, targetCondition, -excess);
+            }
+        }
+    }
+
+    /**
+     * 获取当前活动的感染条件
+     */
+    private static ResourceLocation getCurrentCondition(Player player) {
+        if (!HealthCapability.has(player))
+            return null;
+
+        return HealthCapability.getAndApply(player, health -> {
+            for (BodyComponents component : BodyComponents.values()) {
+                AbstractBody body = health.getComponent(component);
+                if (body == null)
+                    continue;
+
+                if (body.getBodyConditions().contains(SEPSIS_MILD))
+                    return SEPSIS_MILD;
+                if (body.getBodyConditions().contains(SEPSIS_MODERATE))
+                    return SEPSIS_MODERATE;
+                if (body.getBodyConditions().contains(SEPSIS_SEVERE))
+                    return SEPSIS_SEVERE;
+            }
+            return null;
+        }, null);
+    }
+
+    /**
+     * 清除所有等级的感染
+     */
+    private static void clearAllInfections(Player player) {
+        if (!HealthCapability.has(player))
+            return;
+        clearInfection(player, SEPSIS_MILD);
+        clearInfection(player, SEPSIS_MODERATE);
+        clearInfection(player, SEPSIS_SEVERE);
+    }
+
+    /**
+     * 清除特定感染
+     */
+    private static void clearInfection(Player player, ResourceLocation condition) {
+        if (!HealthCapability.has(player))
+            return;
+        HealthCapability.getAndApply(player, health -> {
+            for (BodyComponents component : BodyComponents.values()) {
+                AbstractBody body = health.getComponent(component);
+                if (body != null && body.getBodyConditions().contains(condition)) {
+                    float currentValue = body.getConditionValue(condition);
+                    body.injury(condition, -currentValue);
+                }
+            }
+            return null;
+        }, null);
     }
 
     /**
      * 检查是否为污染药针
      */
-    private static boolean isContaminatedSyringe(net.minecraft.world.item.ItemStack stack, net.minecraft.world.level.Level level) {
-        if (!Config.SYRINGE_CONTAMINATION_ENABLED) return false;
+    private static boolean isContaminatedSyringe(ItemStack stack, net.minecraft.world.level.Level level) {
+        if (!Config.SYRINGE_CONTAMINATION_ENABLED)
+            return false;
         if (stack.isEmpty())
             return false;
 
@@ -194,21 +380,21 @@ public class SepsisCompatHandler {
     /**
      * 行动时额外消耗营养
      */
-    private static void consumeExtraNutrients(Player player) {
+    private static void consumeExtraNutrients(Player player, float sepsisValue) {
         double sugar = NutritionCompatHandler.getSugar(player);
         double fat = NutritionCompatHandler.getFat(player);
 
         float extraSugarCost = Config.SEPSIS_ACTION_EXTRA_SUGAR_COST;
         float extraFatCost = Config.SEPSIS_ACTION_EXTRA_FAT_COST;
 
-        // 消耗额外的糖类
-        if (sugar > 0.5f) {
-            NutritionCompatHandler.addSugar(player, -0.5 * extraSugarCost);
-        }
+        // 根据脓毒症严重程度增加消耗
+        float multiplier = 1.0f + sepsisValue;
 
-        // 消耗额外的油脂
+        if (sugar > 0.5f) {
+            NutritionCompatHandler.addSugar(player, -0.5 * extraSugarCost * multiplier);
+        }
         if (fat > 0.5f) {
-            NutritionCompatHandler.addFat(player, -0.3 * extraFatCost);
+            NutritionCompatHandler.addFat(player, -0.3 * extraFatCost * multiplier);
         }
     }
 
@@ -218,41 +404,42 @@ public class SepsisCompatHandler {
     private static void applySepsisSymptoms(Player player, float sepsisValue) {
         int duration = 200; // 10秒
 
-        if (sepsisValue >= 0.3f) {
-            // 中度症状：虚弱、挖掘疲劳
+        // 轻度症状 (0.3以下)
+        if (sepsisValue >= 0.15f) {
             player.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, duration, 0));
+        }
+
+        // 中度症状 (0.3-0.6)
+        if (sepsisValue >= 0.3f) {
+            player.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, duration, 1));
             player.addEffect(new MobEffectInstance(MobEffects.DIG_SLOWDOWN, duration, 0));
 
-            // 偶尔发烧效果
             if (RANDOM.nextFloat() < 0.01f) {
                 player.setSecondsOnFire(2);
             }
         }
 
+        // 重度症状 (0.6以上)
         if (sepsisValue >= 0.6f) {
-            // 重度症状：更严重的虚弱和挖掘疲劳
-            player.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, duration, 1));
+            player.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, duration, 2));
             player.addEffect(new MobEffectInstance(MobEffects.DIG_SLOWDOWN, duration, 1));
             player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, duration, 0));
 
-            // 周期性眩晕
             if (RANDOM.nextFloat() < 0.02f) {
                 player.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 100, 0));
             }
         }
 
+        // 极重度症状 (0.8以上)
         if (sepsisValue >= 0.8f) {
-            // 极重度症状：严重虚弱、失明
-            player.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, duration, 2));
+            player.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, duration, 3));
             player.addEffect(new MobEffectInstance(MobEffects.DIG_SLOWDOWN, duration, 2));
             player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, duration, 1));
 
-            // 周期性失明
             if (RANDOM.nextFloat() < 0.01f) {
                 player.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 60, 0));
             }
 
-            // 持续伤害
             if (player.tickCount % 40 == 0) {
                 player.hurt(player.damageSources().generic(), 1.0f);
             }
@@ -260,59 +447,52 @@ public class SepsisCompatHandler {
     }
 
     /**
-     * 获取脓毒症值
+     * 获取感染值
      */
-    private static float getSepsisValue(Player player) {
+    public static float getInfectionValue(Player player) {
         if (!HealthCapability.has(player))
             return 0f;
         return HealthCapability.getAndApply(player, health -> {
-            AbstractBody blood = health.getComponent(BodyComponents.BLOOD);
-            if (blood == null || !blood.getBodyConditions().contains(SEPSIS))
-                return 0f;
-            return blood.getConditionValue(SEPSIS);
+            float maxValue = 0f;
+            for (BodyComponents component : BodyComponents.values()) {
+                AbstractBody body = health.getComponent(component);
+                if (body == null)
+                    continue;
+
+                if (body.getBodyConditions().contains(SEPSIS_MILD)) {
+                    maxValue = Math.max(maxValue, body.getConditionValue(SEPSIS_MILD));
+                }
+                if (body.getBodyConditions().contains(SEPSIS_MODERATE)) {
+                    maxValue = Math.max(maxValue, body.getConditionValue(SEPSIS_MODERATE));
+                }
+                if (body.getBodyConditions().contains(SEPSIS_SEVERE)) {
+                    maxValue = Math.max(maxValue, body.getConditionValue(SEPSIS_SEVERE));
+                }
+            }
+            return maxValue;
         }, 0f);
     }
 
     /**
-     * 应用脓毒症感染
+     * 应用感染（治疗使用负值）
      */
-    private static void applySepsisInfection(Player player, float amount) {
+    private static void applyInfection(Player player, ResourceLocation condition, float amount) {
         if (!HealthCapability.has(player))
             return;
-        HealthCapability.getAndApply(player, health -> {
-            AbstractBody blood = health.getComponent(BodyComponents.BLOOD);
-            if (blood != null && blood.getBodyConditions().contains(SEPSIS)) {
-                blood.injury(SEPSIS, amount);
-            }
-            return null;
-        }, null);
-    }
 
-    /**
-     * 应用脓毒症进展
-     */
-    private static void applySepsisProgression(Player player, float amount) {
-        if (!HealthCapability.has(player))
-            return;
-        HealthCapability.getAndApply(player, health -> {
-            AbstractBody blood = health.getComponent(BodyComponents.BLOOD);
-            if (blood != null && blood.getBodyConditions().contains(SEPSIS)) {
-                blood.injury(SEPSIS, amount);
+        if (amount > 0) {
+            ResourceLocation current = getCurrentCondition(player);
+            if (current != null && !current.equals(condition)) {
+                clearAllInfections(player);
             }
-            return null;
-        }, null);
-    }
+        }
 
-    /**
-     * 应用脓毒症治疗（外部调用）
-     */
-    public static void applySepsisHealing(Player player, float amount) {
-        if (!HealthCapability.has(player))
-            return;
         HealthCapability.getAndApply(player, health -> {
-            AbstractBody blood = health.getComponent(BodyComponents.BLOOD);
-            if (blood != null && blood.getBodyConditions().contains(SEPSIS)) {
-                blood.injury(SEPSIS, -amount);
+            for (BodyComponents component : BodyComponents.values()) {
+                AbstractBody body = health.getComponent(component);
+                if (body == null || !body.getBodyConditions().contains(condition))
+                    continue;
+                body.injury(condition, amount);
             }
             return null;
         }, null);
@@ -320,7 +500,7 @@ public class SepsisCompatHandler {
 
     /**
      * 治疗脓毒症（使用广谱抗生素）
-     *
+     * 
      * @return 是否完全治愈
      */
     public static boolean cureSepsis(Player player) {
@@ -329,51 +509,77 @@ public class SepsisCompatHandler {
 
         float cureChance = Config.BROAD_SPECTRUM_ANTIBIOTICS_SEPSIS_CURE_CHANCE;
         if (RANDOM.nextFloat() < cureChance) {
-            applySepsisHealing(player, 1.0f);
+            fullyCureSepsis(player);
             return true;
         } else {
             // 治疗失败，减少部分脓毒症值
-            applySepsisHealing(player, 0.3f);
+            ResourceLocation currentCondition = getCurrentCondition(player);
+            if (currentCondition != null) {
+                applyInfection(player, currentCondition, -0.3f);
+            }
             return false;
         }
+    }
+
+    /**
+     * 完全治愈脓毒症
+     */
+    public static void fullyCureSepsis(Player player) {
+        if (!isSepsisActive(player))
+            return;
+        clearAllInfections(player);
     }
 
     /**
      * 检查是否感染脓毒症
      */
     public static boolean isSepsisActive(Player player) {
-        return getSepsisValue(player) > 0.01f;
+        return getInfectionValue(player) > 0.01f;
     }
 
     /**
      * 获取感染阶段
-     * 0: 未感染, 1: 轻度, 2: 中度, 3: 重度, 4: 极重度
+     * 0: 未感染, 1: 轻度, 2: 中度, 3: 重度
      */
     public static int getSepsisStage(Player player) {
-        float value = getSepsisValue(player);
+        float value = getInfectionValue(player);
         if (value <= 0.01f)
             return 0;
         if (value < 0.3f)
             return 1;
         if (value < 0.6f)
             return 2;
-        if (value < 0.8f)
-            return 3;
-        return 4;
+        return 3;
     }
 
     /**
      * 注册
      */
     public static void register() {
-        ConditionAccessor.get(SEPSIS);
-        Blood.addCondition(List.of(SEPSIS));
-        ConditionAccessor.bloodConditions.add(SEPSIS);
+        if (registered)
+            return;
+        registered = true;
 
-        // HealthScanner 不包含 bloodConditions，故这里补上常规扫描集
-        ConditionAccessor.injuryConditions.add(SEPSIS);
-        ConditionAccessor.painConditions.add(SEPSIS);
-        ConditionAccessor.eyeVisible.add(SEPSIS);
+        ConditionAccessor.get(SEPSIS_MILD);
+        ConditionAccessor.get(SEPSIS_MODERATE);
+        ConditionAccessor.get(SEPSIS_SEVERE);
+
+        Blood.addCondition(List.of(SEPSIS_MILD, SEPSIS_MODERATE, SEPSIS_SEVERE));
+        ConditionAccessor.bloodConditions.add(SEPSIS_MILD);
+        ConditionAccessor.bloodConditions.add(SEPSIS_MODERATE);
+        ConditionAccessor.bloodConditions.add(SEPSIS_SEVERE);
+
+        ConditionAccessor.injuryConditions.add(SEPSIS_MILD);
+        ConditionAccessor.injuryConditions.add(SEPSIS_MODERATE);
+        ConditionAccessor.injuryConditions.add(SEPSIS_SEVERE);
+
+        ConditionAccessor.painConditions.add(SEPSIS_MILD);
+        ConditionAccessor.painConditions.add(SEPSIS_MODERATE);
+        ConditionAccessor.painConditions.add(SEPSIS_SEVERE);
+
+        ConditionAccessor.eyeVisible.add(SEPSIS_MILD);
+        ConditionAccessor.eyeVisible.add(SEPSIS_MODERATE);
+        ConditionAccessor.eyeVisible.add(SEPSIS_SEVERE);
 
         refreshBloodConditionsCache();
     }
@@ -387,4 +593,6 @@ public class SepsisCompatHandler {
             e.printStackTrace();
         }
     }
+
+    private static boolean registered = false;
 }

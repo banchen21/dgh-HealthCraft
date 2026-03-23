@@ -30,7 +30,7 @@ public class DextromethorphanItem extends Item {
         // 检查是否感染上呼吸道感染
         if (!URTICompatHandler.isURTIActive(player)) {
             player.displayClientMessage(
-                    Component.translatable("dghhealthcraft.msg.dextromethorphan.no_urti"),
+                    Component.translatable("dghhealthcraft.msg.dextromethorphan_no_urti"),
                     true);
             return InteractionResultHolder.fail(stack);
         }

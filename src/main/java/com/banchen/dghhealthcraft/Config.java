@@ -119,6 +119,129 @@ public class Config {
     // ==================== 阻断剂配置 ====================
     public static float BLOCKING_AGENT_CORPSE_POISON_IMMUNITY_DURATION_SECONDS = 300;
 
+    // ==================== 食物营养映射配置 ====================
+    public static Map<String, NutritionValues> FOOD_NUTRITION_MAP = new java.util.HashMap<>();
+    public static java.util.List<String> FOOD_NUTRITION_BY_NUTRIENT = new java.util.ArrayList<>();
+
+    public static class NutritionValues {
+        public float water;
+        public float sugar;
+        public float fat;
+        public float protein;
+        public float salt;
+        public float vitamin;
+        public float fiber;
+
+        public NutritionValues(float water, float sugar, float fat, float protein, float salt, float vitamin, float fiber) {
+            this.water = water;
+            this.sugar = sugar;
+            this.fat = fat;
+            this.protein = protein;
+            this.salt = salt;
+            this.vitamin = vitamin;
+            this.fiber = fiber;
+        }
+    }
+
+    public static void loadFoodNutritionMap(java.util.List<? extends String> list) {
+        FOOD_NUTRITION_MAP.clear();
+        if (list == null) {
+            return;
+        }
+        for (String line : list) {
+            if (line == null || line.trim().isEmpty() || line.startsWith("#"))
+                continue;
+            String[] parts = line.split("=", 2);
+            if (parts.length != 2)
+                continue;
+            String itemId = parts[0].trim();
+            String[] values = parts[1].trim().split(":");
+            if (values.length != 7)
+                continue;
+            try {
+                float water = Float.parseFloat(values[0]);
+                float sugar = Float.parseFloat(values[1]);
+                float fat = Float.parseFloat(values[2]);
+                float protein = Float.parseFloat(values[3]);
+                float salt = Float.parseFloat(values[4]);
+                float vitamin = Float.parseFloat(values[5]);
+                float fiber = Float.parseFloat(values[6]);
+                FOOD_NUTRITION_MAP.put(itemId, new NutritionValues(water, sugar, fat, protein, salt, vitamin, fiber));
+            } catch (NumberFormatException e) {
+                // ignore malformed entry
+            }
+        }
+    }
+
+    public static void loadFoodNutritionByNutrient(java.util.List<? extends String> list) {
+        if (list == null) {
+            return;
+        }
+        for (String line : list) {
+            if (line == null || line.trim().isEmpty() || line.startsWith("#"))
+                continue;
+
+            String[] nutrientSplit = line.split("=", 2);
+            if (nutrientSplit.length != 2)
+                continue;
+
+            String nutrient = nutrientSplit[0].trim().toLowerCase();
+            if (!java.util.Set.of("water", "sugar", "fat", "protein", "salt", "vitamin", "fiber").contains(nutrient))
+                continue;
+
+            String[] cellEntries = nutrientSplit[1].trim().split(",");
+            for (String entry : cellEntries) {
+                if (entry == null || entry.trim().isEmpty())
+                    continue;
+                String[] itemSplit = entry.trim().split("=", 2);
+                if (itemSplit.length != 2)
+                    continue;
+
+                String itemId = itemSplit[0].trim();
+                try {
+                    float value = Float.parseFloat(itemSplit[1].trim());
+                    NutritionValues nv = FOOD_NUTRITION_MAP.getOrDefault(itemId,
+                            new NutritionValues(0f, 0f, 0f, 0f, 0f, 0f, 0f));
+                    switch (nutrient) {
+                        case "water" -> nv.water = value;
+                        case "sugar" -> nv.sugar = value;
+                        case "fat" -> nv.fat = value;
+                        case "protein" -> nv.protein = value;
+                        case "salt" -> nv.salt = value;
+                        case "vitamin" -> nv.vitamin = value;
+                        case "fiber" -> nv.fiber = value;
+                    }
+                    FOOD_NUTRITION_MAP.put(itemId, nv);
+                } catch (NumberFormatException e) {
+                    // ignore malformed entry
+                }
+            }
+        }
+    }
+
+    public static void loadFoodNutritionByNutrientEntries(String nutrient, java.util.List<? extends String> entries) {
+        if (entries == null || nutrient == null || nutrient.isBlank()) {
+            return;
+        }
+
+        StringBuilder builder = new StringBuilder();
+        builder.append(nutrient).append("=");
+        boolean first = true;
+        for (String entry : entries) {
+            if (entry == null || entry.trim().isEmpty())
+                continue;
+            if (!first) {
+                builder.append(",");
+            }
+            builder.append(entry.trim());
+            first = false;
+        }
+
+        if (!first) {
+            loadFoodNutritionByNutrient(java.util.List.of(builder.toString()));
+        }
+    }
+
     /**
      * 初始化配置 - 从 Forge 配置同步
      */
