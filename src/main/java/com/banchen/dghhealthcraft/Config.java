@@ -55,6 +55,12 @@ public class Config {
     public static int WATER_DEFICIENCY_POISON_INTERVAL_TICKS = 100;
     public static float WATER_SLEEP_DECREASE_RATE = 10.0f;
 
+    // ==================== 营养下降速率（可配置，降低变化速度） ====================
+    // 0.00008 -> 0.008%/tick（约10分钟从满到空）
+    public static float NUTRITION_WATER_DECREASE_RATE = 0.00008f;
+    // 0.00003 -> 0.003%/tick（睡眠时稍慢）
+    public static float NUTRITION_SLEEP_WATER_DECREASE_RATE = 0.00003f;
+
     public static float SACCHARIDES_NORMAL_MIN = 20.0f;
     public static float SACCHARIDES_NORMAL_MAX = 70.0f;
     public static float SACCHARIDES_LOW_BLINDNESS_INTERVAL_TICKS = 200;

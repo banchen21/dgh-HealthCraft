@@ -11,7 +11,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
 /**
- * 阻断剂 - 短时间内免疫尸毒感染
+ * 阻断剂 - 短时间内不会感染尸毒
  */
 public class BlockingAgentItem extends Item {
     

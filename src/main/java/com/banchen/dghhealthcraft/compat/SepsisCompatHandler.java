@@ -77,9 +77,14 @@ public class SepsisCompatHandler {
         // 原 mod 广谱抗生素直接治疗脓毒症
         ItemStack used = player.getItemInHand(event.getHand());
         if (!used.isEmpty() && used.getItem() == ModItems.ANTIBIOTICS.get()) {
-            // 立即尝试治愈脓毒症
+            // 尝试治愈脓毒症
             if (isSepsisActive(player)) {
-                cureSepsis(player);
+                boolean cured = cureSepsis(player);
+                player.sendSystemMessage(net.minecraft.network.chat.Component.translatable(
+                        cured ? "dghhealthcraft.msg.antibiotic_treated_sepsis" : "dghhealthcraft.msg.antibiotic_failed_sepsis"));
+            } else {
+                player.sendSystemMessage(net.minecraft.network.chat.Component.translatable(
+                        "dghhealthcraft.msg.antibiotic_no_sepsis"));
             }
             return;
         }
@@ -315,17 +320,21 @@ public class SepsisCompatHandler {
 
     /**
      * 治疗脓毒症（使用广谱抗生素）
+     *
+     * @return 是否完全治愈
      */
-    public static void cureSepsis(Player player) {
+    public static boolean cureSepsis(Player player) {
         if (!isSepsisActive(player))
-            return;
+            return false;
 
         float cureChance = Config.BROAD_SPECTRUM_ANTIBIOTICS_SEPSIS_CURE_CHANCE;
         if (RANDOM.nextFloat() < cureChance) {
             applySepsisHealing(player, 1.0f);
+            return true;
         } else {
             // 治疗失败，减少部分脓毒症值
             applySepsisHealing(player, 0.3f);
+            return false;
         }
     }
 

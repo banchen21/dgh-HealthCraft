@@ -10,8 +10,11 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
-/// 右美沙芬
+/**
+ * 右美沙芬 - 治疗轻型上呼吸道感染，中型有概率降为轻型
+ */
 public class DextromethorphanItem extends Item {
+
     public DextromethorphanItem(Properties properties) {
         super(properties);
     }
@@ -19,32 +22,33 @@ public class DextromethorphanItem extends Item {
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
+
         if (level.isClientSide()) {
             return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());
         }
 
-        float before = URTICompatHandler.getInfectionValue(player);
-        boolean hadUrti = URTICompatHandler.isURTIActive(player);
-
-        URTICompatHandler.treatMildURTI(player);
-
-        float after = URTICompatHandler.getInfectionValue(player);
-        if (!hadUrti) {
-            player.displayClientMessage(Component.translatable("dghhealthcraft.msg.dextromethorphan_no_urti"), true);
-        } else if (after < before) {
-            if (before < 0.4f) {
-                player.displayClientMessage(Component.translatable("dghhealthcraft.msg.dextromethorphan_cured"), true);
-            } else {
-                player.displayClientMessage(Component.translatable("dghhealthcraft.msg.dextromethorphan_moderate_to_mild"), true);
-            }
-        } else {
-            player.displayClientMessage(Component.translatable("dghhealthcraft.msg.dextromethorphan_failed"), true);
+        // 检查是否感染上呼吸道感染
+        if (!URTICompatHandler.isURTIActive(player)) {
+            player.displayClientMessage(
+                    Component.translatable("dghhealthcraft.msg.dextromethorphan.no_urti"),
+                    true);
+            return InteractionResultHolder.fail(stack);
         }
 
+        // 治疗
+        URTICompatHandler.treatMildURTI(player);
+
+        // 播放音效
+        player.playSound(net.minecraft.sounds.SoundEvents.GENERIC_DRINK, 1.0f, 1.0f);
+
+        // 消耗物品
         if (!player.isCreative()) {
             stack.shrink(1);
         }
+
+        // 冷却时间
         player.getCooldowns().addCooldown(this, Config.DEXTROMETHORPHAN_COOLDOWN_SECONDS * 20);
+
         return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());
     }
 }

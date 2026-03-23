@@ -34,7 +34,7 @@ public class NutritionCompatHandler {
 
         NutritionState tick(boolean sleeping, boolean jumping) {
             // 基础水分消耗
-            double waterDecrease = sleeping ? Config.WATER_SLEEP_DECREASE_RATE / 10000 : 0.0015;
+            double waterDecrease = sleeping ? Config.NUTRITION_SLEEP_WATER_DECREASE_RATE : Config.NUTRITION_WATER_DECREASE_RATE;
             double w = this.water - waterDecrease;
             
             // 高糖跳跃额外消耗水分

@@ -572,6 +572,18 @@ public class ZombieVirusCompatHandler {
     }
 
     /**
+     * 缓解尸毒（可由靶向剂调用）
+     */
+    public static void alleviateZombieVirus(Player player) {
+        float currentValue = getZombieVirusValue(player);
+        if (currentValue <= 0)
+            return;
+
+        float reduction = Config.TARGETED_AGENT_DETERIORATION_REDUCTION;
+        applyZombieVirusHealing(player, currentValue * reduction);
+    }
+
+    /**
      * 应用尸变进展
      */
     private static void applyZombificationProgression(Player player, float amount) {

@@ -46,7 +46,7 @@ public class HIVCompatHandler {
             setField(cond, "defaultValue", 0.0f);
             setField(cond, "minValue", 0.0f);
             setField(cond, "maxValue", 1.0f);
-            setField(cond, "healingSpeed", 0.0f); // HIV 无法自愈
+            setField(cond, "healingSpeed", 0.0f);
             setField(cond, "healingTS", 0.5f);
             setField(cond, "isInjury", false);
             setField(cond, "isPain", true);
@@ -153,9 +153,11 @@ public class HIVCompatHandler {
      * 检查药针是否污染
      */
     private static boolean isSyringeContaminated(ItemStack stack, Level level) {
-        if (!Config.SYRINGE_CONTAMINATION_ENABLED) return false;
+        if (!Config.SYRINGE_CONTAMINATION_ENABLED)
+            return false;
 
-        if (stack.isEmpty()) return false;
+        if (stack.isEmpty())
+            return false;
 
         if (stack.hasTag()) {
             if (stack.getTag().contains("Contaminated") && stack.getTag().getBoolean("Contaminated")) {
@@ -184,7 +186,8 @@ public class HIVCompatHandler {
     }
 
     private static void markSyringeContaminated(ItemStack stack, Level level) {
-        if (!Config.SYRINGE_CONTAMINATION_ENABLED || stack.isEmpty()) return;
+        if (!Config.SYRINGE_CONTAMINATION_ENABLED || stack.isEmpty())
+            return;
 
         stack.getOrCreateTag().putBoolean("Contaminated", true);
         stack.getOrCreateTag().putLong("ContaminationTimestamp", level.getGameTime());
@@ -195,42 +198,42 @@ public class HIVCompatHandler {
      */
     private static void applyHIVSymptoms(Player player, float hivValue) {
         int duration = Config.PTSD_EFFECT_DURATION_TICKS;
-        
+
         if (hivValue >= 0.3f) {
             // 免疫力下降，更容易感染其他疾病
             int weaknessLevel = Math.min(Config.PTSD_WEAKNESS_LEVEL, 2);
             player.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, duration, weaknessLevel));
         }
-        
+
         if (hivValue >= 0.6f) {
             // 中度症状
             int weaknessLevel = Math.min(Config.PTSD_WEAKNESS_LEVEL + 1, 3);
             int fatigueLevel = Math.min(Config.PTSD_MINING_FATIGUE_LEVEL, 2);
             player.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, duration, weaknessLevel));
             player.addEffect(new MobEffectInstance(MobEffects.DIG_SLOWDOWN, duration, fatigueLevel));
-            
+
             // 偶尔发烧
             if (RANDOM.nextFloat() < 0.01f) {
                 player.setSecondsOnFire(2);
             }
         }
-        
+
         if (hivValue >= 0.8f) {
             // 严重症状（艾滋病期）
             int weaknessLevel = Math.min(Config.PTSD_WEAKNESS_LEVEL + 2, 4);
             int fatigueLevel = Math.min(Config.PTSD_MINING_FATIGUE_LEVEL + 1, 3);
             int slownessLevel = Math.min(Config.PTSD_SLOWNESS_LEVEL, 2);
-            
+
             player.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, duration, weaknessLevel));
             player.addEffect(new MobEffectInstance(MobEffects.DIG_SLOWDOWN, duration, fatigueLevel));
             player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, duration, slownessLevel));
             player.addEffect(new MobEffectInstance(MobEffects.HUNGER, duration, 1));
-            
+
             // 周期性眩晕
             if (RANDOM.nextFloat() < 0.02f) {
                 player.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 100, 0));
             }
-            
+
             // 严重时持续伤害
             if (hivValue > 0.95f && player.tickCount % 100 == 0) {
                 player.hurt(player.damageSources().generic(), 1.0f);
@@ -286,8 +289,9 @@ public class HIVCompatHandler {
      * 治疗 HIV（使用拉米夫定）
      */
     public static void cureHIV(Player player) {
-        if (!isHIVActive(player)) return;
-        
+        if (!isHIVActive(player))
+            return;
+
         float cureChance = Config.LAMIVUDINE_AIDS_CURE_CHANCE;
         if (RANDOM.nextFloat() < cureChance) {
             applyHIVHealing(player, 1.0f);
@@ -335,10 +339,14 @@ public class HIVCompatHandler {
      */
     public static int getHIVStage(Player player) {
         float value = getHIVValue(player);
-        if (value <= 0.001f) return 0;
-        if (value < 0.3f) return 1;
-        if (value < 0.6f) return 2;
-        if (value < 0.8f) return 3;
+        if (value <= 0.001f)
+            return 0;
+        if (value < 0.3f)
+            return 1;
+        if (value < 0.6f)
+            return 2;
+        if (value < 0.8f)
+            return 3;
         return 4;
     }
 

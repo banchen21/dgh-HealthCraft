@@ -47,6 +47,8 @@ public class ConfigSpec {
         public final ForgeConfigSpec.IntValue capsuleMinIntervalSeconds;
         public final ForgeConfigSpec.IntValue capsuleEffectDelaySeconds;
         public final ForgeConfigSpec.DoubleValue lamivudineAidsCureChance;
+        public final ForgeConfigSpec.DoubleValue nutritionWaterDecreaseRate;
+        public final ForgeConfigSpec.DoubleValue nutritionSleepWaterDecreaseRate;
         public final ForgeConfigSpec.DoubleValue dextromethorphanMildCureChance;
         public final ForgeConfigSpec.DoubleValue dextromethorphanModerateToMildChance;
         public final ForgeConfigSpec.BooleanValue ibuprofenTemporaryRelief;
@@ -106,6 +108,16 @@ public class ConfigSpec {
             aidsDiseaseBoost = builder
                     .comment("Disease chance multiplier when HIV is active")
                     .defineInRange("aidsBoost", 2.0, 1.0, 10.0);
+            builder.pop();
+
+            builder.comment("Nutrition Decay Settings")
+                   .push("nutrition");
+            nutritionWaterDecreaseRate = builder
+                    .comment("Water decrease per tick in nutrition state")
+                    .defineInRange("waterDecreaseRate", 0.00008, 0.0, 0.01);
+            nutritionSleepWaterDecreaseRate = builder
+                    .comment("Water decrease per tick while sleeping instead of base rate")
+                    .defineInRange("sleepWaterDecreaseRate", 0.00003, 0.0, 0.01);
             builder.pop();
             
             builder.comment("Sepsis Settings")
@@ -192,10 +204,10 @@ public class ConfigSpec {
                    .push("medicine");
             capsuleMinIntervalSeconds = builder
                     .comment("Minimum interval between taking medicine (seconds)")
-                    .defineInRange("minIntervalSeconds", 300, 0, 3600);
+                    .defineInRange("capsuleMinIntervalSeconds", 300, 0, 3600);
             capsuleEffectDelaySeconds = builder
                     .comment("Delay before medicine takes effect (seconds)")
-                    .defineInRange("effectDelaySeconds", 120, 0, 600);
+                    .defineInRange("capsuleEffectDelaySeconds", 120, 0, 600);
             lamivudineAidsCureChance = builder
                     .comment("Chance to cure HIV with Lamivudine")
                     .defineInRange("lamivudineCureChance", 0.10, 0.0, 1.0);
@@ -254,7 +266,7 @@ public class ConfigSpec {
                    .push("blocking_agent");
             blockingAgentCorpsePoisonImmunityDurationSeconds = builder
                     .comment("Duration of corpse poison immunity (seconds)")
-                    .defineInRange("immunityDurationSeconds", 300, 0, 3600);
+                    .defineInRange("blockingAgentCorpsePoisonImmunityDurationSeconds", 300, 0, 3600);
             builder.pop();
             
             builder.pop();
@@ -319,6 +331,8 @@ public class ConfigSpec {
         Config.CAPSULE_MIN_INTERVAL_SECONDS = COMMON.capsuleMinIntervalSeconds.get();
         Config.CAPSULE_EFFECT_DELAY_SECONDS = COMMON.capsuleEffectDelaySeconds.get();
         Config.LAMIVUDINE_AIDS_CURE_CHANCE = COMMON.lamivudineAidsCureChance.get().floatValue();
+        Config.NUTRITION_WATER_DECREASE_RATE = COMMON.nutritionWaterDecreaseRate.get().floatValue();
+        Config.NUTRITION_SLEEP_WATER_DECREASE_RATE = COMMON.nutritionSleepWaterDecreaseRate.get().floatValue();
         Config.DEXTROMETHORPHAN_MILD_CURE_CHANCE = COMMON.dextromethorphanMildCureChance.get().floatValue();
         Config.DEXTROMETHORPHAN_MODERATE_TO_MILD_CHANCE = COMMON.dextromethorphanModerateToMildChance.get().floatValue();
         Config.DEXTROMETHORPHAN_COOLDOWN_SECONDS = COMMON.dextromethorphanCooldownSeconds.get();

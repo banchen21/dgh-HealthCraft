@@ -25,6 +25,7 @@ public class ModCreativeTabs {
                         output.accept(ModItems.ORAL_TARGETED_AGENT.get());
                         output.accept(ModItems.ORAL_SEDATIVE.get());
                         output.accept(ModItems.BLOCKER.get());
+                        output.accept(ModItems.NUTRITION_SCANNER.get());
                     })
                     .build());
 }

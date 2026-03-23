@@ -65,7 +65,15 @@ description='''${mod_description}'''
     versionRange="${minecraft_version_range}"
     ordering="NONE"
     side="BOTH"
-
+[[dependencies.${mod_id}]]
+    modId="dgh"  # Dont Get Hurt 模组的 Mod ID
+    mandatory=true  # 强制依赖，缺少此模组游戏将无法启动
+    # 版本范围：需要版本 >= 1.3.3.2
+    # 您可以调整版本范围以适应实际需要
+    versionRange="[1.3.3.2,)"  # 1.3.3.2 及以上版本
+    # 加载顺序：在 DGH 之后加载，确保 DGH 先初始化
+    ordering="AFTER"
+    side="BOTH"  # 客户端和服务器都需要
 # Features are specific properties of the game environment, that you may want to declare you require. This example declares
 # that your mod requires GL version 3.2 or higher. Other features will be added. They are side aware so declaring this won't
 # stop your mod loading on the server for example.

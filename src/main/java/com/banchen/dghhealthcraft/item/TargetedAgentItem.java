@@ -23,10 +23,18 @@ public class TargetedAgentItem extends Item {
             return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());
         }
 
-        if (!ZombieVirusCompatHandler.isZombified(player)) {
+        boolean zombieVirusActive = ZombieVirusCompatHandler.isZombieVirusActive(player);
+        boolean zombified = ZombieVirusCompatHandler.isZombified(player);
+
+        if (!zombieVirusActive && !zombified) {
             player.displayClientMessage(Component.translatable("dghhealthcraft.msg.targeted_agent_no_zomb"), true);
         } else {
-            ZombieVirusCompatHandler.alleviateZombification(player);
+            if (zombieVirusActive) {
+                ZombieVirusCompatHandler.alleviateZombieVirus(player);
+            }
+            if (zombified) {
+                ZombieVirusCompatHandler.alleviateZombification(player);
+            }
             player.displayClientMessage(Component.translatable("dghhealthcraft.msg.targeted_agent_relief"), true);
         }
 

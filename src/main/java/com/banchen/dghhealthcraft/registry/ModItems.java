@@ -1,9 +1,12 @@
 package com.banchen.dghhealthcraft.registry;
 
 import com.banchen.dghhealthcraft.DGH_HealthcraftMod;
+import com.banchen.dghhealthcraft.item.BlockingAgentItem;
 import com.banchen.dghhealthcraft.item.DextromethorphanItem;
 import com.banchen.dghhealthcraft.item.IbuprofenItem;
 import com.banchen.dghhealthcraft.item.LamivudineItem;
+import com.banchen.dghhealthcraft.item.NutritionScannerItem;
+import com.banchen.dghhealthcraft.item.RibavirinItem;
 import com.banchen.dghhealthcraft.item.SedativeItem;
 import com.banchen.dghhealthcraft.item.TargetedAgentItem;
 import net.minecraft.world.item.Item;
@@ -22,12 +25,15 @@ public class ModItems {
     public static final RegistryObject<Item> IBUPROFEN_CAPSULE = ITEMS.register("ibuprofen_capsule",
             () -> new IbuprofenItem(new Item.Properties().stacksTo(16)));
     public static final RegistryObject<Item> RIBAVIRIN_CAPSULE = ITEMS.register("ribavirin_capsule",
-            () -> new Item(new Item.Properties().stacksTo(16)));
+            () -> new RibavirinItem(new Item.Properties().stacksTo(16)));
 
     public static final RegistryObject<Item> ORAL_TARGETED_AGENT = ITEMS.register("oral_targeted_agent",
             () -> new TargetedAgentItem(new Item.Properties().stacksTo(16)));
     public static final RegistryObject<Item> ORAL_SEDATIVE = ITEMS.register("oral_sedative",
             () -> new SedativeItem(new Item.Properties().stacksTo(16)));
     public static final RegistryObject<Item> BLOCKER = ITEMS.register("blocker",
-            () -> new Item(new Item.Properties().stacksTo(16)));
+            () -> new BlockingAgentItem(new Item.Properties().stacksTo(16)));
+
+    public static final RegistryObject<Item> NUTRITION_SCANNER = ITEMS.register("nutrition_scanner",
+            () -> new NutritionScannerItem(new Item.Properties().stacksTo(1).durability(32)));
 }

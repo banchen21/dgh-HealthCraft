@@ -10,7 +10,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
-/// 拉米夫定 
+/// 拉米夫定  - 具有一定概率治愈 HIV 感染
 public class LamivudineItem extends Item {
     public LamivudineItem(Properties properties) {
         super(properties);
