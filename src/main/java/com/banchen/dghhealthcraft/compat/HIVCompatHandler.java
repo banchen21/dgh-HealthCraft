@@ -52,7 +52,7 @@ public class HIVCompatHandler {
             setField(cond, "isComfort", false);
             setField(cond, "isResist", false);
 
-            ConditionAccessor.bloodConditions.add(name);
+            ConditionAccessor.painConditions.add(name);
             ConditionAccessor.eyeVisible.add(name);
             return cond;
         } catch (Exception e) {
@@ -320,5 +320,22 @@ public class HIVCompatHandler {
         ConditionAccessor.get(HIV);
         Blood.addCondition(List.of(HIV));
         ConditionAccessor.bloodConditions.add(HIV);
+
+        // HealthScanner 不引用 bloodConditions，因此也要加入可识别集合
+        ConditionAccessor.painConditions.add(HIV);
+        ConditionAccessor.injuryConditions.add(HIV);
+        ConditionAccessor.eyeVisible.add(HIV);
+
+        refreshBloodConditionsCache();
+    }
+
+    private static void refreshBloodConditionsCache() {
+        try {
+            var field = Blood.class.getDeclaredField("BLOOD_CONDITIONS");
+            field.setAccessible(true);
+            field.set(null, null);
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
     }
 }

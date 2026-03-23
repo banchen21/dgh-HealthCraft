@@ -54,7 +54,8 @@ public class ZombieVirusCompatHandler {
             setField(cond, "isComfort", false);
             setField(cond, "isResist", false);
 
-            ConditionAccessor.bloodConditions.add(name);
+            ConditionAccessor.injuryConditions.add(name);
+            ConditionAccessor.painConditions.add(name);
             ConditionAccessor.eyeVisible.add(name);
             return cond;
         } catch (Exception e) {
@@ -78,7 +79,8 @@ public class ZombieVirusCompatHandler {
             setField(cond, "isComfort", false);
             setField(cond, "isResist", false);
 
-            ConditionAccessor.bloodConditions.add(name);
+            ConditionAccessor.injuryConditions.add(name);
+            ConditionAccessor.painConditions.add(name);
             ConditionAccessor.eyeVisible.add(name);
             return cond;
         } catch (Exception e) {
@@ -214,12 +216,26 @@ public class ZombieVirusCompatHandler {
      * 基于配置的尸变天数：从感染到尸变需要 CORPSE_TRANSFORMATION_DAYS 天
      */
     private static float calculateProgression(float currentValue) {
-        // 尸变所需的总进度为 1.0（从 0 到 1）
-        float remainingProgress = 1.0f - currentValue;
-        // 每天需要的进度 = 1.0 / 尸变天数
-        float dailyProgress = 1.0f / Config.CORPSE_TRANSFORMATION_DAYS;
-        // 每 tick 的进度 = 每天进度 / 24000 tick
-        return dailyProgress / 24000f;
+        if (currentValue >= 1.0f) {
+            return 0.0f; // 已经达到尸变上限，不再继续恶化
+        }
+
+        int transformationDays = Math.max(1, Config.CORPSE_TRANSFORMATION_DAYS);
+        // 每天需要的进度
+        float dailyProgress = 1.0f / transformationDays;
+        // 每 tick 的基础进度
+        float tickBaseProgress = dailyProgress / 24000f;
+
+        // 还剩多少进度
+        float remainingProgress = Math.max(0.0f, 1.0f - currentValue);
+
+        // 进展随当前病情加速（越严重越快），但不会超过阈值；此处可进一步调整曲线
+        float acceleration = 0.5f + currentValue * 0.5f;
+
+        // 进度不会变为负数
+        float progression = tickBaseProgress * Math.max(0.1f, acceleration) * remainingProgress;
+
+        return progression;
     }
 
     /**
@@ -245,23 +261,40 @@ public class ZombieVirusCompatHandler {
      * 所有部位每天恶化
      */
     private static void deteriorateAllBodyParts(Player player, float deteriorationAmount) {
-        if (!HealthCapability.has(player))
+        if (deteriorationAmount <= 0f || !HealthCapability.has(player))
             return;
 
         HealthCapability.getAndApply(player, health -> {
             // 遍历所有身体部位并造成损伤
             for (BodyComponents component : BodyComponents.values()) {
                 AbstractBody body = health.getComponent(component);
-                if (body != null) {
-                    // 对所有可用的身体条件造成损伤
-                    for (ResourceLocation condition : body.getBodyConditions()) {
-                        if (!condition.equals(ZOMBIFICATION) && !condition.equals(ZOMBIE_VIRUS)) {
-                            float currentValue = body.getConditionValue(condition);
-                            float newValue = Math.min(currentValue + deteriorationAmount, 1.0f);
-                            // 使用 injury 方法设置新值
-                            body.injury(condition, deteriorationAmount);
-                        }
+                if (body == null) continue;
+
+                // 对所有可用的身体条件造成损伤
+                for (ResourceLocation condition : body.getBodyConditions()) {
+                    if (condition.equals(ZOMBIFICATION) || condition.equals(ZOMBIE_VIRUS)) {
+                        continue;
                     }
+
+                    BodyCondition cond = ConditionAccessor.get(condition);
+                    if (cond == null) continue;
+
+                    // 只有伤害/疼痛条件才被尸变恶化处理，可根据需求扩展
+                    if (!cond.isInjury() && !cond.isPain()) {
+                        continue;
+                    }
+
+                    float currentValue = body.getConditionValue(condition);
+                    if (currentValue >= cond.maxValue() - 1e-6f) {
+                        continue;
+                    }
+
+                    float applyAmount = Math.min(deteriorationAmount, cond.maxValue() - currentValue);
+                    if (applyAmount <= 0f) {
+                        continue;
+                    }
+
+                    body.injury(condition, applyAmount);
                 }
             }
             return null;
@@ -524,5 +557,26 @@ public class ZombieVirusCompatHandler {
         Blood.addCondition(List.of(ZOMBIE_VIRUS, ZOMBIFICATION));
         ConditionAccessor.bloodConditions.add(ZOMBIE_VIRUS);
         ConditionAccessor.bloodConditions.add(ZOMBIFICATION);
+
+        // HealthScanner 不包含 bloodConditions，需要补入可扫描集合
+        ConditionAccessor.injuryConditions.add(ZOMBIE_VIRUS);
+        ConditionAccessor.painConditions.add(ZOMBIE_VIRUS);
+        ConditionAccessor.eyeVisible.add(ZOMBIE_VIRUS);
+
+        ConditionAccessor.injuryConditions.add(ZOMBIFICATION);
+        ConditionAccessor.painConditions.add(ZOMBIFICATION);
+        ConditionAccessor.eyeVisible.add(ZOMBIFICATION);
+
+        refreshBloodConditionsCache();
+    }
+
+    private static void refreshBloodConditionsCache() {
+        try {
+            var field = Blood.class.getDeclaredField("BLOOD_CONDITIONS");
+            field.setAccessible(true);
+            field.set(null, null);
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
     }
 }

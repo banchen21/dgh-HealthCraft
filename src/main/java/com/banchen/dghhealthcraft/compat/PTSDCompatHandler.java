@@ -60,6 +60,7 @@ public class PTSDCompatHandler {
             setField(cond, "isComfort", false);
             setField(cond, "isResist", false);
 
+            ConditionAccessor.painConditions.add(name);
             ConditionAccessor.eyeVisible.add(name);
             return cond;
         } catch (Exception e) {

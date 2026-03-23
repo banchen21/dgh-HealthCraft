@@ -48,7 +48,6 @@ public class SepsisCompatHandler {
             setField(cond, "isComfort", false);
             setField(cond, "isResist", false);
 
-            ConditionAccessor.bloodConditions.add(name);
             ConditionAccessor.eyeVisible.add(name);
             return cond;
         } catch (Exception e) {
@@ -340,5 +339,22 @@ public class SepsisCompatHandler {
         ConditionAccessor.get(SEPSIS);
         Blood.addCondition(List.of(SEPSIS));
         ConditionAccessor.bloodConditions.add(SEPSIS);
+
+        // HealthScanner 不包含 bloodConditions，故这里补上常规扫描集
+        ConditionAccessor.injuryConditions.add(SEPSIS);
+        ConditionAccessor.painConditions.add(SEPSIS);
+        ConditionAccessor.eyeVisible.add(SEPSIS);
+
+        refreshBloodConditionsCache();
+    }
+
+    private static void refreshBloodConditionsCache() {
+        try {
+            var field = Blood.class.getDeclaredField("BLOOD_CONDITIONS");
+            field.setAccessible(true);
+            field.set(null, null);
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
     }
 }
