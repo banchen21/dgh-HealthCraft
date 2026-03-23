@@ -15,6 +15,7 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -91,16 +92,15 @@ public class HIVCompatHandler {
             return;
 
         // 检查药针是否污染
-        boolean isContaminated = isSyringeContaminated(stack);
-        if (!isContaminated) return;
+        boolean isContaminated = isSyringeContaminated(stack, player.level());
 
         // 使用污染药针有概率感染 HIV
-        if (RANDOM.nextFloat() < Config.AIDS_CONTAMINATED_SYRINGE_CHANCE) {
+        if (isContaminated && RANDOM.nextFloat() < Config.AIDS_CONTAMINATED_SYRINGE_CHANCE) {
             applyInfection(player, HIV, 0.05f);
         }
-        
+
         // 同时有概率感染脓毒症
-        if (RANDOM.nextFloat() < Config.SEPSIS_CONTAMINATED_SYRINGE_CHANCE) {
+        if (isContaminated && RANDOM.nextFloat() < Config.SEPSIS_CONTAMINATED_SYRINGE_CHANCE) {
             try {
                 applyInfection(player, SepsisCompatHandler.SEPSIS, 0.07f);
             } catch (NoClassDefFoundError e) {
@@ -108,6 +108,9 @@ public class HIVCompatHandler {
                         .warning("SepsisCompatHandler not found, skipping sepsis infection");
             }
         }
+
+        // 药针使用后被污染（持久化 True）
+        markSyringeContaminated(stack, player.level());
     }
 
     /**
@@ -149,16 +152,42 @@ public class HIVCompatHandler {
     /**
      * 检查药针是否污染
      */
-    private static boolean isSyringeContaminated(ItemStack stack) {
+    private static boolean isSyringeContaminated(ItemStack stack, Level level) {
         if (!Config.SYRINGE_CONTAMINATION_ENABLED) return false;
-        
-        // 检查药针是否有污染标记
-        if (stack.hasTag() && stack.getTag().contains("Contaminated")) {
-            return stack.getTag().getBoolean("Contaminated");
+
+        if (stack.isEmpty()) return false;
+
+        if (stack.hasTag()) {
+            if (stack.getTag().contains("Contaminated") && stack.getTag().getBoolean("Contaminated")) {
+                return true;
+            }
+
+            if (stack.getTag().contains("ContaminationTimestamp")) {
+                long timestamp = stack.getTag().getLong("ContaminationTimestamp");
+                long duration = Config.SYRINGE_CONTAMINATION_DURATION_SECONDS * 20L;
+                if (level.getGameTime() - timestamp <= duration) {
+                    stack.getOrCreateTag().putBoolean("Contaminated", true);
+                    return true;
+                }
+                // 已过期，移除标记
+                stack.getOrCreateTag().remove("Contaminated");
+                stack.getOrCreateTag().remove("ContaminationTimestamp");
+            }
         }
-        
+
         // 如果没有标记，随机决定是否污染（模拟真实场景）
-        return RANDOM.nextFloat() < 0.3f;
+        boolean initial = RANDOM.nextFloat() < 0.3f;
+        if (initial) {
+            markSyringeContaminated(stack, level);
+        }
+        return initial;
+    }
+
+    private static void markSyringeContaminated(ItemStack stack, Level level) {
+        if (!Config.SYRINGE_CONTAMINATION_ENABLED || stack.isEmpty()) return;
+
+        stack.getOrCreateTag().putBoolean("Contaminated", true);
+        stack.getOrCreateTag().putLong("ContaminationTimestamp", level.getGameTime());
     }
 
     /**

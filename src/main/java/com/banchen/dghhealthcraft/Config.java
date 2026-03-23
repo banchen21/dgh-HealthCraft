@@ -94,11 +94,16 @@ public class Config {
     public static float LAMIVUDINE_AIDS_CURE_CHANCE = 0.10f;
     public static float DEXTROMETHORPHAN_MILD_CURE_CHANCE = 0.8f;
     public static float DEXTROMETHORPHAN_MODERATE_TO_MILD_CHANCE = 0.5f;
+    public static int DEXTROMETHORPHAN_COOLDOWN_SECONDS = 3;
     public static boolean IBUPROFEN_TEMPORARY_RELIEF = true;
     public static int IBUPROFEN_RELIEF_DURATION_SECONDS = 300;
+    public static int IBUPROFEN_COOLDOWN_SECONDS = 3;
     public static float TARGETED_AGENT_DETERIORATION_REDUCTION = 0.5f;
+    public static int TARGETED_AGENT_COOLDOWN_SECONDS = 30;
     public static float SEDATIVE_PTSD_RELIEF_FACTOR = 0.7f;
+    public static int SEDATIVE_COOLDOWN_SECONDS = 30;
     public static boolean RIBAVIRIN_IMMEDIATE_EFFECT = true;
+    public static int RIBAVIRIN_COOLDOWN_SECONDS = 30;
     public static float BROAD_SPECTRUM_ANTIBIOTICS_SEPSIS_CURE_CHANCE = 0.9f;
 
     // ==================== 药针污染机制 ====================
@@ -185,11 +190,16 @@ public class Config {
         configs.put("lamivudine_aids_cure_chance", LAMIVUDINE_AIDS_CURE_CHANCE);
         configs.put("dextromethorphan_mild_cure_chance", DEXTROMETHORPHAN_MILD_CURE_CHANCE);
         configs.put("dextromethorphan_moderate_to_mild_chance", DEXTROMETHORPHAN_MODERATE_TO_MILD_CHANCE);
+        configs.put("dextromethorphan_cooldown_seconds", DEXTROMETHORPHAN_COOLDOWN_SECONDS);
         configs.put("ibuprofen_temporary_relief", IBUPROFEN_TEMPORARY_RELIEF);
         configs.put("ibuprofen_relief_duration_seconds", IBUPROFEN_RELIEF_DURATION_SECONDS);
+        configs.put("ibuprofen_cooldown_seconds", IBUPROFEN_COOLDOWN_SECONDS);
         configs.put("targeted_agent_deterioration_reduction", TARGETED_AGENT_DETERIORATION_REDUCTION);
+        configs.put("targeted_agent_cooldown_seconds", TARGETED_AGENT_COOLDOWN_SECONDS);
         configs.put("sedative_ptsd_relief_factor", SEDATIVE_PTSD_RELIEF_FACTOR);
+        configs.put("sedative_cooldown_seconds", SEDATIVE_COOLDOWN_SECONDS);
         configs.put("ribavirin_immediate_effect", RIBAVIRIN_IMMEDIATE_EFFECT);
+        configs.put("ribavirin_cooldown_seconds", RIBAVIRIN_COOLDOWN_SECONDS);
         configs.put("broad_spectrum_antibiotics_sepsis_cure_chance", BROAD_SPECTRUM_ANTIBIOTICS_SEPSIS_CURE_CHANCE);
 
         // 药针污染

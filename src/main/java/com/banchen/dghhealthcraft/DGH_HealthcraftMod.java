@@ -21,11 +21,18 @@ public class DGH_HealthcraftMod {
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, ConfigSpec.COMMON_SPEC,
                 "dghhealthcraft-common.toml");
 
-        // 监听配置加载事件
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(this::onCommonSetup);
+        // 注册物品与创造标签
+        var bus = FMLJavaModLoadingContext.get().getModEventBus();
+        net.minecraftforge.registries.DeferredRegister<?>[] registers = new net.minecraftforge.registries.DeferredRegister<?>[]{
+                com.banchen.dghhealthcraft.registry.ModItems.ITEMS,
+                com.banchen.dghhealthcraft.registry.ModCreativeTabs.TABS
+        };
+        for (var r : registers) {
+            r.register(bus);
+        }
 
-        // 注意：不要在构造函数中调用 Config.init()！
-        // 配置会在 onCommonSetup 中加载
+        // 监听配置加载事件
+        bus.addListener(this::onCommonSetup);
     }
 
     private void onCommonSetup(final FMLCommonSetupEvent event) {

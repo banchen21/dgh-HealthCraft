@@ -8,6 +8,8 @@ import com.lastimp.dgh.common.capability.bodyPart.base.AbstractBody;
 import com.lastimp.dgh.common.capability.bodyPart.base.BodyCondition;
 import com.lastimp.dgh.common.capability.bodyPart.bodies.Blood;
 import com.lastimp.dgh.common.enums.BodyComponents;
+
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -125,6 +127,50 @@ public class ZombieVirusCompatHandler {
                 entity instanceof WitherSkeleton;
     }
 
+    public static final String BLOCKER_TICKS_KEY = "dghhealthcraft:blocker_ticks";
+
+    /**
+     * 检查阻断剂是否激活
+     */
+    public static boolean isBlockerActive(Player player) {
+        if (player == null)
+            return false;
+        return player.getPersistentData().getInt(BLOCKER_TICKS_KEY) > 0;
+    }
+
+    /**
+     * 激活阻断剂
+     * 
+     * @param player 玩家
+     * @param ticks  持续时间（ticks）
+     */
+    public static void activateBlocker(Player player, int ticks) {
+        if (player == null)
+            return;
+        player.getPersistentData().putInt(BLOCKER_TICKS_KEY, Math.max(0, ticks));
+    }
+
+    /**
+     * 更新阻断剂计时器（每 tick 调用）
+     */
+    private static void tickBlocker(Player player) {
+        if (player == null)
+            return;
+        int ticks = player.getPersistentData().getInt(BLOCKER_TICKS_KEY);
+        if (ticks <= 0)
+            return;
+
+        ticks = Math.max(0, ticks - 1);
+        player.getPersistentData().putInt(BLOCKER_TICKS_KEY, ticks);
+
+        // 阻断效果结束时提示
+        if (ticks == 0) {
+            player.displayClientMessage(
+                    Component.translatable("dghhealthcraft.msg.blocker_expired"),
+                    true);
+        }
+    }
+
     /**
      * 玩家受到伤害时触发尸毒感染
      */
@@ -141,6 +187,18 @@ public class ZombieVirusCompatHandler {
             attacker = (LivingEntity) event.getSource().getEntity();
         }
 
+        // 如果阻断剂激活，免疫尸毒感染
+        if (isBlockerActive(player)) {
+            // 可选：显示免疫提示（避免过于频繁）
+            if (player.tickCount % 100 == 0) {
+                int remaining = getBlockerRemainingSeconds(player);
+                player.displayClientMessage(
+                        Component.translatable("dghhealthcraft.msg.blocker_immune", remaining),
+                        true);
+            }
+            return;
+        }
+
         // 检查是否是亡灵生物攻击
         if (attacker != null && isValidZombieEntity(attacker)) {
             // 检查是否已经尸变
@@ -154,7 +212,9 @@ public class ZombieVirusCompatHandler {
             if (RANDOM.nextFloat() < chance) {
                 float infectionAmount = 0.05f + RANDOM.nextFloat() * 0.1f;
                 applyZombieVirusInfection(player, infectionAmount);
-
+                player.displayClientMessage(
+                        Component.translatable("dghhealthcraft.msg.zombie_virus.infected"),
+                        true);
             }
         }
     }
@@ -169,6 +229,9 @@ public class ZombieVirusCompatHandler {
         Player player = event.player;
         if (player.level().isClientSide())
             return;
+
+        // 更新阻断剂计时器
+        tickBlocker(player);
 
         float virusValue = getZombieVirusValue(player);
         float zombificationValue = getZombificationValue(player);
@@ -268,7 +331,8 @@ public class ZombieVirusCompatHandler {
             // 遍历所有身体部位并造成损伤
             for (BodyComponents component : BodyComponents.values()) {
                 AbstractBody body = health.getComponent(component);
-                if (body == null) continue;
+                if (body == null)
+                    continue;
 
                 // 对所有可用的身体条件造成损伤
                 for (ResourceLocation condition : body.getBodyConditions()) {
@@ -277,7 +341,8 @@ public class ZombieVirusCompatHandler {
                     }
 
                     BodyCondition cond = ConditionAccessor.get(condition);
-                    if (cond == null) continue;
+                    if (cond == null)
+                        continue;
 
                     // 只有伤害/疼痛条件才被尸变恶化处理，可根据需求扩展
                     if (!cond.isInjury() && !cond.isPain()) {
@@ -578,5 +643,24 @@ public class ZombieVirusCompatHandler {
         } catch (Throwable e) {
             e.printStackTrace();
         }
+    }
+
+    /**
+     * 获取阻断剂剩余时间（秒）
+     */
+    public static int getBlockerRemainingSeconds(Player player) {
+        if (player == null)
+            return 0;
+        int ticks = player.getPersistentData().getInt(BLOCKER_TICKS_KEY);
+        return ticks / 20;
+    }
+
+    /**
+     * 获取阻断剂剩余时间（ticks）
+     */
+    public static int getBlockerRemainingTicks(Player player) {
+        if (player == null)
+            return 0;
+        return player.getPersistentData().getInt(BLOCKER_TICKS_KEY);
     }
 }

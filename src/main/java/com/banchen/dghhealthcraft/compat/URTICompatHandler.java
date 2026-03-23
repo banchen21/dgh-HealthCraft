@@ -281,7 +281,7 @@ public class URTICompatHandler {
     /**
      * 获取感染值
      */
-    private static float getInfectionValue(Player player) {
+    public static float getInfectionValue(Player player) {
         if (!HealthCapability.has(player)) return 0f;
         return HealthCapability.getAndApply(player, health -> {
             AbstractBody blood = health.getComponent(BodyComponents.BLOOD);
@@ -309,7 +309,7 @@ public class URTICompatHandler {
     }
     
     /**
-     * 治疗上呼吸道感染（外部调用）
+     * 治疗上呼吸道感染（外部调用，可指定治疗量）
      */
     public static void cureURTI(Player player, float amount) {
         applyInfection(player, URTI, -amount);
@@ -327,17 +327,22 @@ public class URTICompatHandler {
             // 轻型，直接治愈
             if (RANDOM.nextFloat() < Config.DEXTROMETHORPHAN_MILD_CURE_CHANCE) {
                 applyInfection(player, URTI, -infectionValue);
+                player.sendSystemMessage(net.minecraft.network.chat.Component.translatable(
+                        "dghhealthcraft.msg.urti.cured"));
             }
         } else if (infectionValue < 0.7f) {
             // 中型，有概率降为轻型
             if (RANDOM.nextFloat() < Config.DEXTROMETHORPHAN_MODERATE_TO_MILD_CHANCE) {
-                applyInfection(player, URTI, -0.3f);
+                applyInfection(player, URTI, -(infectionValue - 0.3f));
+                player.sendSystemMessage(net.minecraft.network.chat.Component.translatable(
+                        "dghhealthcraft.msg.urti.reduced_to_mild"));
             }
         }
     }
     
     /**
      * 立即治疗（使用利巴韦林）
+     * 将重型、中型上呼吸道感染降为轻型
      */
     public static void immediateTreatment(Player player) {
         if (!isURTIActive(player)) return;
@@ -345,8 +350,12 @@ public class URTICompatHandler {
         if (Config.RIBAVIRIN_IMMEDIATE_EFFECT) {
             float infectionValue = getInfectionValue(player);
             if (infectionValue >= 0.4f) {
-                // 重型或中型降为轻型
-                applyInfection(player, URTI, -(infectionValue - 0.3f));
+                // 重型或中型降为轻型（0.3f 是轻型的最大值）
+                float targetValue = 0.3f;
+                float reduction = infectionValue - targetValue;
+                if (reduction > 0) {
+                    applyInfection(player, URTI, -reduction);
+                }
             }
         }
     }

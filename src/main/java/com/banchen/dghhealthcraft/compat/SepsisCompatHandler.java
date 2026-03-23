@@ -7,11 +7,13 @@ import com.lastimp.dgh.common.capability.bodyPart.ConditionAccessor;
 import com.lastimp.dgh.common.capability.bodyPart.base.AbstractBody;
 import com.lastimp.dgh.common.capability.bodyPart.base.BodyCondition;
 import com.lastimp.dgh.common.capability.bodyPart.bodies.Blood;
+import com.lastimp.dgh.common.entry.register.ModItems;
 import com.lastimp.dgh.common.enums.BodyComponents;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.LivingDamageEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
@@ -72,9 +74,19 @@ public class SepsisCompatHandler {
         if (player.level().isClientSide())
             return;
 
+        // 原 mod 广谱抗生素直接治疗脓毒症
+        ItemStack used = player.getItemInHand(event.getHand());
+        if (!used.isEmpty() && used.getItem() == ModItems.ANTIBIOTICS.get()) {
+            // 立即尝试治愈脓毒症
+            if (isSepsisActive(player)) {
+                cureSepsis(player);
+            }
+            return;
+        }
+
         // 检查是否使用药针（此处需要根据实际物品判断）
         // 如果使用污染药针，触发感染
-        if (isContaminatedSyringe(player.getItemInHand(event.getHand()))) {
+        if (isContaminatedSyringe(used, player.level())) {
             if (RANDOM.nextFloat() < Config.SEPSIS_CONTAMINATED_SYRINGE_CHANCE) {
                 applySepsisInfection(player, 0.05f);
                 // TODO 发送感染提示
@@ -151,15 +163,24 @@ public class SepsisCompatHandler {
     /**
      * 检查是否为污染药针
      */
-    private static boolean isContaminatedSyringe(net.minecraft.world.item.ItemStack stack) {
+    private static boolean isContaminatedSyringe(net.minecraft.world.item.ItemStack stack, net.minecraft.world.level.Level level) {
+        if (!Config.SYRINGE_CONTAMINATION_ENABLED) return false;
         if (stack.isEmpty())
             return false;
 
-        // 检查是否为药针且已污染
-        // 实际实现需要根据药针污染系统判断
-        // 这里简化处理，假设药针有 NBT 标记
-        if (stack.hasTag() && stack.getTag().contains("Contaminated")) {
-            return stack.getTag().getBoolean("Contaminated");
+        if (stack.hasTag() && stack.getTag().contains("Contaminated") && stack.getTag().getBoolean("Contaminated")) {
+            return true;
+        }
+
+        if (stack.hasTag() && stack.getTag().contains("ContaminationTimestamp")) {
+            long timestamp = stack.getTag().getLong("ContaminationTimestamp");
+            long duration = Config.SYRINGE_CONTAMINATION_DURATION_SECONDS * 20L;
+            if (level.getGameTime() - timestamp <= duration) {
+                stack.getOrCreateTag().putBoolean("Contaminated", true);
+                return true;
+            }
+            stack.getOrCreateTag().remove("Contaminated");
+            stack.getOrCreateTag().remove("ContaminationTimestamp");
         }
 
         return false;

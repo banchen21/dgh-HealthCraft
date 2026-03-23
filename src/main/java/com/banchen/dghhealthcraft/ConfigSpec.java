@@ -51,9 +51,14 @@ public class ConfigSpec {
         public final ForgeConfigSpec.DoubleValue dextromethorphanModerateToMildChance;
         public final ForgeConfigSpec.BooleanValue ibuprofenTemporaryRelief;
         public final ForgeConfigSpec.IntValue ibuprofenReliefDurationSeconds;
+        public final ForgeConfigSpec.IntValue dextromethorphanCooldownSeconds;
+        public final ForgeConfigSpec.IntValue ibuprofenCooldownSeconds;
         public final ForgeConfigSpec.DoubleValue targetedAgentDeteriorationReduction;
+        public final ForgeConfigSpec.IntValue targetedAgentCooldownSeconds;
         public final ForgeConfigSpec.DoubleValue sedativePtsdReliefFactor;
+        public final ForgeConfigSpec.IntValue sedativeCooldownSeconds;
         public final ForgeConfigSpec.BooleanValue ribavirinImmediateEffect;
+        public final ForgeConfigSpec.IntValue ribavirinCooldownSeconds;
         public final ForgeConfigSpec.DoubleValue broadSpectrumAntibioticsSepsisCureChance;
         
         public final ForgeConfigSpec.BooleanValue syringeContaminationEnabled;
@@ -206,15 +211,30 @@ public class ConfigSpec {
             ibuprofenReliefDurationSeconds = builder
                     .comment("Duration of Ibuprofen relief (seconds)")
                     .defineInRange("ibuprofenReliefDurationSeconds", 300, 0, 3600);
+            dextromethorphanCooldownSeconds = builder
+                    .comment("Dextromethorphan cooldown (seconds)")
+                    .defineInRange("dextromethorphanCooldownSeconds", 3, 0, 3600);
+            ibuprofenCooldownSeconds = builder
+                    .comment("Ibuprofen cooldown (seconds)")
+                    .defineInRange("ibuprofenCooldownSeconds", 3, 0, 3600);
             targetedAgentDeteriorationReduction = builder
                     .comment("Zombification deterioration reduction factor")
                     .defineInRange("targetedAgentDeteriorationReduction", 0.5, 0.0, 1.0);
+            targetedAgentCooldownSeconds = builder
+                    .comment("Targeted agent cooldown (seconds)")
+                    .defineInRange("targetedAgentCooldownSeconds", 30, 0, 3600);
             sedativePtsdReliefFactor = builder
                     .comment("PTSD relief factor from sedatives")
                     .defineInRange("sedativePtsdReliefFactor", 0.7, 0.0, 1.0);
+            sedativeCooldownSeconds = builder
+                    .comment("Sedative cooldown (seconds)")
+                    .defineInRange("sedativeCooldownSeconds", 30, 0, 3600);
             ribavirinImmediateEffect = builder
                     .comment("Whether Ribavirin has immediate effect")
                     .define("ribavirinImmediateEffect", true);
+            ribavirinCooldownSeconds = builder
+                    .comment("Ribavirin cooldown (seconds)")
+                    .defineInRange("ribavirinCooldownSeconds", 30, 0, 3600);
             broadSpectrumAntibioticsSepsisCureChance = builder
                     .comment("Chance to cure sepsis with broad-spectrum antibiotics")
                     .defineInRange("broadSpectrumAntibioticsCureChance", 0.9, 0.0, 1.0);
@@ -301,11 +321,16 @@ public class ConfigSpec {
         Config.LAMIVUDINE_AIDS_CURE_CHANCE = COMMON.lamivudineAidsCureChance.get().floatValue();
         Config.DEXTROMETHORPHAN_MILD_CURE_CHANCE = COMMON.dextromethorphanMildCureChance.get().floatValue();
         Config.DEXTROMETHORPHAN_MODERATE_TO_MILD_CHANCE = COMMON.dextromethorphanModerateToMildChance.get().floatValue();
+        Config.DEXTROMETHORPHAN_COOLDOWN_SECONDS = COMMON.dextromethorphanCooldownSeconds.get();
         Config.IBUPROFEN_TEMPORARY_RELIEF = COMMON.ibuprofenTemporaryRelief.get();
         Config.IBUPROFEN_RELIEF_DURATION_SECONDS = COMMON.ibuprofenReliefDurationSeconds.get();
+        Config.IBUPROFEN_COOLDOWN_SECONDS = COMMON.ibuprofenCooldownSeconds.get();
         Config.TARGETED_AGENT_DETERIORATION_REDUCTION = COMMON.targetedAgentDeteriorationReduction.get().floatValue();
+        Config.TARGETED_AGENT_COOLDOWN_SECONDS = COMMON.targetedAgentCooldownSeconds.get();
         Config.SEDATIVE_PTSD_RELIEF_FACTOR = COMMON.sedativePtsdReliefFactor.get().floatValue();
+        Config.SEDATIVE_COOLDOWN_SECONDS = COMMON.sedativeCooldownSeconds.get();
         Config.RIBAVIRIN_IMMEDIATE_EFFECT = COMMON.ribavirinImmediateEffect.get();
+        Config.RIBAVIRIN_COOLDOWN_SECONDS = COMMON.ribavirinCooldownSeconds.get();
         Config.BROAD_SPECTRUM_ANTIBIOTICS_SEPSIS_CURE_CHANCE = COMMON.broadSpectrumAntibioticsSepsisCureChance.get().floatValue();
         
         // Syringe
