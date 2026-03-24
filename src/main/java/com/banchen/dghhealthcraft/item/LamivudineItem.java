@@ -2,7 +2,6 @@ package com.banchen.dghhealthcraft.item;
 
 import com.banchen.dghhealthcraft.Config;
 import com.banchen.dghhealthcraft.compat.HIVCompatHandler;
-import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
