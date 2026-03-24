@@ -11,8 +11,10 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - name: Checkout main repo
+      - name: Checkout dgh-HealthCraft
         uses: actions/checkout@v4
+        with:
+          path: dgh-HealthCraft
 
       - name: Checkout dontgethurt dependency
         uses: actions/checkout@v4
@@ -29,13 +31,15 @@ jobs:
       - name: Read mod version
         id: mod_version
         run: |
-          echo "MOD_VERSION=$(grep '^mod_version=' gradle.properties | cut -d'=' -f2)" >> $GITHUB_ENV
+          echo "MOD_VERSION=$(grep '^mod_version=' dgh-HealthCraft/gradle.properties | cut -d'=' -f2)" >> $GITHUB_ENV
           echo "RELEASE_VERSION=${GITHUB_REF_NAME:-$MOD_VERSION}" >> $GITHUB_ENV
 
       - name: Gradle build
+        working-directory: dgh-HealthCraft
         run: .\gradlew --no-daemon clean build
 
       - name: Collect artifact
+        working-directory: dgh-HealthCraft
         run: |
           set -e
           artifactPath=$(powershell -NoLogo -NoProfile -Command "Get-ChildItem -Path build/libs -Filter '*.jar' | Select-Object -First 1 -ExpandProperty FullName")
