@@ -23,11 +23,8 @@ public class SedativeItem extends Item {
             return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());
         }
 
-        if (!PTSDCompatHandler.isPTSDActive(player)) {
-            player.displayClientMessage(Component.translatable("dghhealthcraft.msg.sedative_no_ptsd"), true);
-        } else {
+        if (PTSDCompatHandler.isPTSDActive(player)) {
             PTSDCompatHandler.applySedativeRelief(player);
-            player.displayClientMessage(Component.translatable("dghhealthcraft.msg.sedative_relief"), true);
         }
 
         if (!player.isCreative()) {

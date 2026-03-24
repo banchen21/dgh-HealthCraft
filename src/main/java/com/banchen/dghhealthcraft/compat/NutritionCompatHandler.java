@@ -38,7 +38,8 @@ public class NutritionCompatHandler {
         }
 
         static NutritionState fromTag(CompoundTag tag) {
-            if (tag == null || !tag.contains("water")) return create();
+            if (tag == null || !tag.contains("water"))
+                return create();
             return new NutritionState(
                     tag.getDouble("water"),
                     tag.getDouble("sugar"),
@@ -63,9 +64,10 @@ public class NutritionCompatHandler {
 
         NutritionState tick(boolean sleeping, boolean jumping) {
             // 基础水分消耗
-            double waterDecrease = sleeping ? Config.NUTRITION_SLEEP_WATER_DECREASE_RATE : Config.NUTRITION_WATER_DECREASE_RATE;
+            double waterDecrease = sleeping ? Config.NUTRITION_SLEEP_WATER_DECREASE_RATE
+                    : Config.NUTRITION_WATER_DECREASE_RATE;
             double w = this.water - waterDecrease;
-            
+
             // 高糖跳跃额外消耗水分
             if (jumping && this.sugar > Config.SACCHARIDES_NORMAL_MAX / 100) {
                 w -= 0.01 * Config.SACCHARIDES_HIGH_JUMP_WATER_COST_MULTIPLIER;
@@ -125,7 +127,8 @@ public class NutritionCompatHandler {
 
     private static void saveToPlayer(Player player, NutritionState state) {
         CompoundTag persistent = player.getPersistentData();
-        if (persistent == null) return;
+        if (persistent == null)
+            return;
         persistent.put(NBT_KEY, state.toTag());
     }
 
@@ -280,7 +283,7 @@ public class NutritionCompatHandler {
         // 糖类配置效果
         double sugar = updated.sugar * 100;
         if (sugar < Config.SACCHARIDES_NORMAL_MIN) {
-            if (player.tickCount % (int)Config.SACCHARIDES_LOW_BLINDNESS_INTERVAL_TICKS == 0) {
+            if (player.tickCount % (int) Config.SACCHARIDES_LOW_BLINDNESS_INTERVAL_TICKS == 0) {
                 player.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 60, 0));
             }
         }
@@ -360,8 +363,9 @@ public class NutritionCompatHandler {
 
         // 脓毒症相关衰竭
         if (HealthCapability.has(player)) {
-            float sepsis = HealthCapability.getAndApply(player, 
-                health -> health.getComponent(BodyComponents.BLOOD).getConditionValue(SepsisCompatHandler.SEPSIS), 0f);
+            float sepsis = HealthCapability.getAndApply(player,
+                    health -> health.getComponent(BodyComponents.BLOOD).getConditionValue(SepsisCompatHandler.SEPSIS),
+                    0f);
             if (sepsis > 0.01f) {
                 // 行动时额外消耗糖类和油脂
                 if (player.isSprinting() || player.isSwimming() || player.isFallFlying()) {
@@ -370,7 +374,7 @@ public class NutritionCompatHandler {
                     addSugar(player, -sugarCost);
                     addFat(player, -fatCost);
                 }
-                
+
                 // 中毒效果
                 if (random.nextDouble() < sepsis * Config.SEPSIS_POISON_CHANCE) {
                     player.addEffect(new MobEffectInstance(MobEffects.POISON, 40, 0));
@@ -434,7 +438,7 @@ public class NutritionCompatHandler {
         if (fat < Config.FATS_NORMAL_MIN) {
             event.setAmount(event.getAmount() * Config.FATS_LOW_DAMAGE_MULTIPLIER);
         }
-        
+
         // 高油脂吸收部分伤害
         if (fat > Config.FATS_NORMAL_MAX) {
             float absorbedDamage = event.getAmount() * Config.FATS_HIGH_DAMAGE_ABSORPTION;
@@ -458,12 +462,12 @@ public class NutritionCompatHandler {
         if (protein > Config.PROTEIN_NORMAL_MAX && Config.PROTEIN_HIGH_HALF_HUNGER) {
             player.getFoodData().addExhaustion(2.0f);
         }
-        
+
         // 维生素过高时进食饥饿值减半
         if (vitamin > Config.VITAMIN_NORMAL_MAX && Config.VITAMIN_HIGH_HALF_HUNGER) {
             player.getFoodData().addExhaustion(2.0f);
         }
-        
+
         // 蛋白质过高时反胃
         if (protein > Config.PROTEIN_NORMAL_MAX && Config.PROTEIN_HIGH_NAUSEA_EFFECT) {
             player.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 100, 0));
@@ -475,9 +479,11 @@ public class NutritionCompatHandler {
     @SubscribeEvent
     public static void onPlayerClone(PlayerEvent.Clone event) {
         Player original = event.getOriginal();
-        if (original == null) return;
+        if (original == null)
+            return;
         Entity entity = event.getEntity();
-        if (!(entity instanceof Player)) return;
+        if (!(entity instanceof Player))
+            return;
         Player player = (Player) entity;
 
         if (event.isWasDeath()) {
@@ -494,7 +500,8 @@ public class NutritionCompatHandler {
     @SubscribeEvent
     public static void onPlayerLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
         Entity entity = event.getEntity();
-        if (!(entity instanceof Player)) return;
+        if (!(entity instanceof Player))
+            return;
         Player player = (Player) entity;
         states.remove(player.getUUID());
     }
@@ -508,16 +515,21 @@ public class NutritionCompatHandler {
         if (values == null)
             return;
 
-        if (values.water != 0) addWater(player, values.water);
-        if (values.sugar != 0) addSugar(player, values.sugar);
-        if (values.fat != 0) addFat(player, values.fat);
-        if (values.protein != 0) addProtein(player, values.protein);
-        if (values.salt != 0) addSalt(player, values.salt);
-        if (values.vitamin != 0) addVitamin(player, values.vitamin);
-        if (values.fiber != 0) addFiber(player, values.fiber);
+        if (values.water != 0)
+            addWater(player, values.water);
+        if (values.sugar != 0)
+            addSugar(player, values.sugar);
+        if (values.fat != 0)
+            addFat(player, values.fat);
+        if (values.protein != 0)
+            addProtein(player, values.protein);
+        if (values.salt != 0)
+            addSalt(player, values.salt);
+        if (values.vitamin != 0)
+            addVitamin(player, values.vitamin);
+        if (values.fiber != 0)
+            addFiber(player, values.fiber);
 
-        player.displayClientMessage(net.minecraft.network.chat.Component.translatable(
-                "dghhealthcraft.msg.nutrition_from_food", key), true);
     }
 
     private static void applyCondition(Player player, net.minecraft.resources.ResourceLocation condition,

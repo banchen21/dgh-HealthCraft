@@ -105,9 +105,9 @@ public class Config {
     public static int IBUPROFEN_RELIEF_DURATION_SECONDS = 300;
     public static int IBUPROFEN_COOLDOWN_SECONDS = 3;
     public static float TARGETED_AGENT_DETERIORATION_REDUCTION = 0.5f;
-    public static int TARGETED_AGENT_COOLDOWN_SECONDS = 30;
+    public static int TARGETED_AGENT_COOLDOWN_SECONDS = 5;
     public static float SEDATIVE_PTSD_RELIEF_FACTOR = 0.7f;
-    public static int SEDATIVE_COOLDOWN_SECONDS = 30;
+    public static int SEDATIVE_COOLDOWN_SECONDS = 5;
     public static boolean RIBAVIRIN_IMMEDIATE_EFFECT = true;
     public static int RIBAVIRIN_COOLDOWN_SECONDS = 30;
     public static float BROAD_SPECTRUM_ANTIBIOTICS_SEPSIS_CURE_CHANCE = 0.9f;

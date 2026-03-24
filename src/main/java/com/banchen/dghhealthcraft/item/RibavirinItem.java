@@ -14,7 +14,7 @@ import net.minecraft.world.level.Level;
  * 利巴韦林 - 立即将重型、中型上呼吸道感染降为轻型
  */
 public class RibavirinItem extends Item {
-    
+
     public RibavirinItem(Properties properties) {
         super(properties);
     }
@@ -22,34 +22,30 @@ public class RibavirinItem extends Item {
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
-        
+
         if (level.isClientSide()) {
             return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());
         }
-        
+
         // 检查是否感染上呼吸道感染
         if (!URTICompatHandler.isURTIActive(player)) {
-            player.displayClientMessage(
-                Component.translatable("dghhealthcraft.msg.ribavirin_no_urti"), 
-                true
-            );
             return InteractionResultHolder.fail(stack);
         }
-        
+
         // 立即治疗
         URTICompatHandler.immediateTreatment(player);
-        
+
         // 播放音效
         player.playSound(net.minecraft.sounds.SoundEvents.GENERIC_DRINK, 1.0f, 1.0f);
-        
+
         // 消耗物品
         if (!player.isCreative()) {
             stack.shrink(1);
         }
-        
+
         // 冷却时间
         player.getCooldowns().addCooldown(this, Config.RIBAVIRIN_COOLDOWN_SECONDS * 20);
-        
+
         return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());
     }
 }

@@ -25,14 +25,14 @@ public class ModItems {
     public static final RegistryObject<Item> IBUPROFEN_CAPSULE = ITEMS.register("ibuprofen_capsule",
             () -> new IbuprofenItem(new Item.Properties().stacksTo(16)));
     public static final RegistryObject<Item> RIBAVIRIN_SYRINGE = ITEMS.register("ribavirin_syringe",
-            () -> new RibavirinItem(new Item.Properties().stacksTo(16)));
+            () -> new RibavirinItem(new Item.Properties().stacksTo(1)));
 
     public static final RegistryObject<Item> ORAL_TARGETED_AGENT = ITEMS.register("oral_targeted_agent",
             () -> new TargetedAgentItem(new Item.Properties().stacksTo(16)));
     public static final RegistryObject<Item> ORAL_SEDATIVE = ITEMS.register("oral_sedative",
             () -> new SedativeItem(new Item.Properties().stacksTo(16)));
     public static final RegistryObject<Item> BLOCKER = ITEMS.register("blocker",
-            () -> new BlockingAgentItem(new Item.Properties().stacksTo(16)));
+            () -> new BlockingAgentItem(new Item.Properties().stacksTo(1)));
 
     public static final RegistryObject<Item> NUTRITION_SCANNER = ITEMS.register("nutrition_scanner",
             () -> new NutritionScannerItem(new Item.Properties().stacksTo(1).durability(32)));

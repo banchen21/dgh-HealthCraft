@@ -587,9 +587,6 @@ public class URTICompatHandler {
         if (currentCondition != null) {
             applyInfection(player, currentCondition, -amount);
         }
-        player.displayClientMessage(
-                Component.translatable("dghhealthcraft.msg.urti.healed", amount),
-                true);
     }
 
     /**
@@ -607,9 +604,6 @@ public class URTICompatHandler {
         if (hasCondition(player, URTI_SEVERE))
             clearInfection(player, URTI_SEVERE);
 
-        player.displayClientMessage(
-                Component.translatable("dghhealthcraft.msg.urti.fully_cured"),
-                true);
     }
 
     /**
@@ -625,13 +619,6 @@ public class URTICompatHandler {
             // 轻型，直接治愈
             if (RANDOM.nextFloat() < Config.DEXTROMETHORPHAN_MILD_CURE_CHANCE) {
                 fullyCureURTI(player);
-                player.displayClientMessage(
-                        Component.translatable("dghhealthcraft.msg.urti.cured_by_dextromethorphan"),
-                        true);
-            } else {
-                player.displayClientMessage(
-                        Component.translatable("dghhealthcraft.msg.urti.cure_failed"),
-                        true);
             }
         } else if (infectionValue < 0.7f) {
             // 中型，有概率降为轻型
@@ -641,18 +628,7 @@ public class URTICompatHandler {
                 if (currentCondition != null) {
                     applyInfection(player, currentCondition, -reduction);
                 }
-                player.displayClientMessage(
-                        Component.translatable("dghhealthcraft.msg.urti.reduced_to_mild"),
-                        true);
-            } else {
-                player.displayClientMessage(
-                        Component.translatable("dghhealthcraft.msg.urti.no_effect"),
-                        true);
             }
-        } else {
-            player.displayClientMessage(
-                    Component.translatable("dghhealthcraft.msg.urti.too_severe_for_dextromethorphan"),
-                    true);
         }
     }
 
@@ -665,9 +641,6 @@ public class URTICompatHandler {
             return;
 
         if (!Config.RIBAVIRIN_IMMEDIATE_EFFECT) {
-            player.displayClientMessage(
-                    Component.translatable("dghhealthcraft.msg.ribavirin_disabled"),
-                    true);
             return;
         }
 
@@ -680,15 +653,11 @@ public class URTICompatHandler {
             }
             // 重新应用为轻型
             applyInfection(player, URTI_MILD, 0.3f);
-            player.displayClientMessage(
-                    Component.translatable("dghhealthcraft.msg.urti.reduced_by_ribavirin"),
-                    true);
+
         } else if (infectionValue > 0) {
             // 轻型可以直接治愈
             fullyCureURTI(player);
-            player.displayClientMessage(
-                    Component.translatable("dghhealthcraft.msg.urti.cured_by_ribavirin"),
-                    true);
+
         }
     }
 
@@ -700,9 +669,7 @@ public class URTICompatHandler {
             return;
 
         if (!Config.IBUPROFEN_TEMPORARY_RELIEF) {
-            player.displayClientMessage(
-                    Component.translatable("dghhealthcraft.msg.ibuprofen_disabled"),
-                    true);
+
             return;
         }
 
@@ -714,13 +681,7 @@ public class URTICompatHandler {
                 clearInfection(player, currentCondition);
             }
             applyInfection(player, URTI_MILD, 0.3f);
-            player.displayClientMessage(
-                    Component.translatable("dghhealthcraft.msg.urti.temporary_relief"),
-                    true);
-        } else {
-            player.displayClientMessage(
-                    Component.translatable("dghhealthcraft.msg.urti.already_mild"),
-                    true);
+
         }
     }
 

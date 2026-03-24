@@ -189,8 +189,6 @@ public class ZombieVirusCompatHandler {
         player.getPersistentData().putInt(BLOCKER_TICKS_KEY, ticks);
 
         if (ticks == 0) {
-            player.displayClientMessage(
-                    Component.translatable("dghhealthcraft.msg.blocker_expired"), true);
         }
     }
 
@@ -222,8 +220,6 @@ public class ZombieVirusCompatHandler {
             if (RANDOM.nextFloat() < chance) {
                 float infectionAmount = 0.03f + RANDOM.nextFloat() * 0.05f;
                 applyInfection(player, ZOMBIE_VIRUS_EARLY, infectionAmount);
-                player.displayClientMessage(
-                        Component.translatable("dghhealthcraft.msg.zombie_virus.infected"), true);
             }
         }
     }

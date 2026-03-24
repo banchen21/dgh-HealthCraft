@@ -153,8 +153,6 @@ public class SepsisCompatHandler {
         if (isContaminatedSyringe(used, player.level())) {
             if (RANDOM.nextFloat() < Config.SEPSIS_CONTAMINATED_SYRINGE_CHANCE) {
                 applyInfection(player, SEPSIS_MILD, 0.03f);
-                player.displayClientMessage(
-                        Component.translatable("dghhealthcraft.msg.sepsis.infected"), true);
             }
         }
     }

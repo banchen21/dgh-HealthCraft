@@ -29,11 +29,6 @@ public class BlockingAgentItem extends Item {
 
         // 检查是否已经激活阻断效果
         if (ZombieVirusCompatHandler.isBlockerActive(player)) {
-            int remainingSeconds = ZombieVirusCompatHandler.getBlockerRemainingSeconds(player);
-            player.displayClientMessage(
-                Component.translatable("dghhealthcraft.msg.blocker_already_active", remainingSeconds), 
-                true
-            );
             return InteractionResultHolder.fail(stack);
         }
 
@@ -43,13 +38,7 @@ public class BlockingAgentItem extends Item {
         
         // 激活阻断效果
         ZombieVirusCompatHandler.activateBlocker(player, durationTicks);
-        
-        // 发送提示消息
-        player.displayClientMessage(
-            Component.translatable("dghhealthcraft.msg.blocker_activated", durationSeconds), 
-            true
-        );
-        
+
         // 如果不是创造模式，消耗物品
         if (!player.isCreative()) {
             stack.shrink(1);

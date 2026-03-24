@@ -23,19 +23,7 @@ public class LamivudineItem extends Item {
             return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());
         }
 
-        boolean hadHiv = HIVCompatHandler.isHIVActive(player);
-        if (!hadHiv) {
-            player.displayClientMessage(Component.translatable("dghhealthcraft.msg.lamivudine_no_hiv"), true);
-        }
-
         HIVCompatHandler.cureHIV(player);
-
-        boolean nowHiv = HIVCompatHandler.isHIVActive(player);
-        if (hadHiv && !nowHiv) {
-            player.displayClientMessage(Component.translatable("dghhealthcraft.msg.lamivudine_cured"), true);
-        } else if (hadHiv) {
-            player.displayClientMessage(Component.translatable("dghhealthcraft.msg.lamivudine_failed"), true);
-        }
 
         if (!player.isCreative()) {
             stack.shrink(1);

@@ -23,17 +23,8 @@ public class IbuprofenItem extends Item {
             return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());
         }
 
-        if (!URTICompatHandler.isURTIActive(player)) {
-            player.displayClientMessage(Component.translatable("dghhealthcraft.msg.ibuprofen_no_urti"), true);
-        } else {
-            float before = URTICompatHandler.getInfectionValue(player);
+        if (URTICompatHandler.isURTIActive(player)) {
             URTICompatHandler.temporaryRelief(player);
-            float after = URTICompatHandler.getInfectionValue(player);
-            if (after < before) {
-                player.displayClientMessage(Component.translatable("dghhealthcraft.msg.ibuprofen_relief"), true);
-            } else {
-                player.displayClientMessage(Component.translatable("dghhealthcraft.msg.ibuprofen_no_effect"), true);
-            }
         }
 
         if (!player.isCreative()) {

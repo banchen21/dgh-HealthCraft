@@ -26,16 +26,11 @@ public class TargetedAgentItem extends Item {
         boolean zombieVirusActive = ZombieVirusCompatHandler.isZombieVirusActive(player);
         boolean zombified = ZombieVirusCompatHandler.isZombified(player);
 
-        if (!zombieVirusActive && !zombified) {
-            player.displayClientMessage(Component.translatable("dghhealthcraft.msg.targeted_agent_no_zomb"), true);
-        } else {
-            if (zombieVirusActive) {
-                ZombieVirusCompatHandler.alleviateZombieVirus(player);
-            }
-            if (zombified) {
-                ZombieVirusCompatHandler.alleviateZombification(player);
-            }
-            player.displayClientMessage(Component.translatable("dghhealthcraft.msg.targeted_agent_relief"), true);
+        if (zombieVirusActive) {
+            ZombieVirusCompatHandler.alleviateZombieVirus(player);
+        }
+        if (zombified) {
+            ZombieVirusCompatHandler.alleviateZombification(player);
         }
 
         if (!player.isCreative()) {

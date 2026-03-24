@@ -145,8 +145,6 @@ public class HIVCompatHandler {
 
         if (isContaminated && RANDOM.nextFloat() < Config.AIDS_CONTAMINATED_SYRINGE_CHANCE) {
             applyInfection(player, HIV_LATENT, 0.03f);
-            player.displayClientMessage(
-                    net.minecraft.network.chat.Component.translatable("dghhealthcraft.msg.hiv.infected"), true);
         }
 
         if (isContaminated && RANDOM.nextFloat() < Config.SEPSIS_CONTAMINATED_SYRINGE_CHANCE) {
