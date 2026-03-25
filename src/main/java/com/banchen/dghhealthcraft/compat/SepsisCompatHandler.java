@@ -2,6 +2,8 @@ package com.banchen.dghhealthcraft.compat;
 
 import com.banchen.dghhealthcraft.Config;
 import com.banchen.dghhealthcraft.DGH_HealthcraftMod;
+import com.banchen.dghhealthcraft.nutrition.NutritionCompatHandler;
+import com.banchen.dghhealthcraft.registry.DghHModItems;
 import com.lastimp.dgh.common.capability.HealthCapability;
 import com.lastimp.dgh.common.capability.bodyPart.ConditionAccessor;
 import com.lastimp.dgh.common.capability.bodyPart.base.AbstractBody;
@@ -9,7 +11,6 @@ import com.lastimp.dgh.common.capability.bodyPart.base.BodyCondition;
 import com.lastimp.dgh.common.capability.bodyPart.bodies.Blood;
 import com.lastimp.dgh.common.entry.register.ModItems;
 import com.lastimp.dgh.common.enums.BodyComponents;
-import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -135,22 +136,20 @@ public class SepsisCompatHandler {
         if (player.level().isClientSide())
             return;
 
-        // 使用广谱抗生素治疗脓毒症
         ItemStack used = player.getItemInHand(event.getHand());
+
+        // 使用广谱抗生素治疗脓毒症
         if (!used.isEmpty() && used.getItem() == ModItems.ANTIBIOTICS.get()) {
-            if (isSepsisActive(player)) {
-                boolean cured = cureSepsis(player);
-                player.sendSystemMessage(Component.translatable(
-                        cured ? "dghhealthcraft.msg.antibiotic_treated_sepsis"
-                                : "dghhealthcraft.msg.antibiotic_failed_sepsis"));
-            } else {
-                player.sendSystemMessage(Component.translatable("dghhealthcraft.msg.antibiotic_no_sepsis"));
+            // 消耗抗生素
+            if (!player.isCreative()) {
+                used.shrink(1);
             }
             return;
         }
 
         // 检查是否使用污染药针
         if (isContaminatedSyringe(used, player.level())) {
+            // 感染脓毒症
             if (RANDOM.nextFloat() < Config.SEPSIS_CONTAMINATED_SYRINGE_CHANCE) {
                 applyInfection(player, SEPSIS_MILD, 0.03f);
             }
@@ -213,13 +212,16 @@ public class SepsisCompatHandler {
         float newInfectionValue = getInfectionValue(player);
 
         // 行动时额外消耗糖类和油脂
-        if (player.isSprinting() || player.isSwimming() || player.isFallFlying()) {
+        if (player.isSprinting() || player.isSwimming() || player.isFallFlying() ||
+                player.zza != 0 || player.xxa != 0) { // 检测是否在移动
             consumeExtraNutrients(player, newInfectionValue);
         }
 
         // 定期中毒效果
-        if (player.tickCount % 100 == 0 && RANDOM.nextFloat() < Config.SEPSIS_POISON_CHANCE) {
-            player.addEffect(new MobEffectInstance(MobEffects.POISON, 100, 0));
+        if (player.tickCount % 100 == 0 && RANDOM.nextFloat() < Config.SEPSIS_POISON_CHANCE * (1 + newInfectionValue)) {
+            int poisonDuration = 100 + (int) (newInfectionValue * 100);
+            int poisonLevel = (int) (newInfectionValue * 2);
+            player.addEffect(new MobEffectInstance(MobEffects.POISON, poisonDuration, Math.min(poisonLevel, 3)));
         }
 
         // 根据感染程度施加症状
@@ -256,7 +258,10 @@ public class SepsisCompatHandler {
             progression *= Config.AIDS_DISEASE_BOOST;
         }
 
-        return progression;
+        // 根据当前值动态调整
+        progression *= (1.0f + currentValue);
+
+        return Math.min(progression, 0.005f);
     }
 
     /**
@@ -357,19 +362,12 @@ public class SepsisCompatHandler {
         if (stack.isEmpty())
             return false;
 
-        if (stack.hasTag() && stack.getTag().contains("Contaminated") && stack.getTag().getBoolean("Contaminated")) {
-            return true;
-        }
-
-        if (stack.hasTag() && stack.getTag().contains("ContaminationTimestamp")) {
-            long timestamp = stack.getTag().getLong("ContaminationTimestamp");
-            long duration = Config.SYRINGE_CONTAMINATION_DURATION_SECONDS * 20L;
-            if (level.getGameTime() - timestamp <= duration) {
-                stack.getOrCreateTag().putBoolean("Contaminated", true);
+        // 检查是否使用受污染的药针
+        if (stack.getItem() == DghHModItems.CONTAMINATED_SYRINGE.get()) {
+            // 以配置的概率感染 HIV
+            if (RANDOM.nextFloat() < Config.AIDS_CONTAMINATED_SYRINGE_CHANCE) {
                 return true;
             }
-            stack.getOrCreateTag().remove("Contaminated");
-            stack.getOrCreateTag().remove("ContaminationTimestamp");
         }
 
         return false;
@@ -382,17 +380,17 @@ public class SepsisCompatHandler {
         double sugar = NutritionCompatHandler.getSugar(player);
         double fat = NutritionCompatHandler.getFat(player);
 
-        float extraSugarCost = Config.SEPSIS_ACTION_EXTRA_SUGAR_COST;
-        float extraFatCost = Config.SEPSIS_ACTION_EXTRA_FAT_COST;
-
         // 根据脓毒症严重程度增加消耗
         float multiplier = 1.0f + sepsisValue;
+        float extraSugarCost = Config.SEPSIS_ACTION_EXTRA_SUGAR_COST * multiplier;
+        float extraFatCost = Config.SEPSIS_ACTION_EXTRA_FAT_COST * multiplier;
 
-        if (sugar > 0.5f) {
-            NutritionCompatHandler.addSugar(player, -0.5 * extraSugarCost * multiplier);
+        // 每 tick 消耗（20 tick = 1秒）
+        if (sugar > extraSugarCost) {
+            NutritionCompatHandler.addSugar(player, -extraSugarCost / 20f);
         }
-        if (fat > 0.5f) {
-            NutritionCompatHandler.addFat(player, -0.3 * extraFatCost * multiplier);
+        if (fat > extraFatCost) {
+            NutritionCompatHandler.addFat(player, -extraFatCost / 20f);
         }
     }
 
@@ -474,7 +472,7 @@ public class SepsisCompatHandler {
     /**
      * 应用感染（治疗使用负值）
      */
-    private static void applyInfection(Player player, ResourceLocation condition, float amount) {
+    public static void applyInfection(Player player, ResourceLocation condition, float amount) {
         if (!HealthCapability.has(player))
             return;
 

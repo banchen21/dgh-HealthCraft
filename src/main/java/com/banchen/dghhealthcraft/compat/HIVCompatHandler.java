@@ -2,6 +2,8 @@ package com.banchen.dghhealthcraft.compat;
 
 import com.banchen.dghhealthcraft.Config;
 import com.banchen.dghhealthcraft.DGH_HealthcraftMod;
+import com.banchen.dghhealthcraft.nutrition.NutritionCompatHandler;
+import com.banchen.dghhealthcraft.registry.DghHModItems;
 import com.lastimp.dgh.common.capability.HealthCapability;
 import com.lastimp.dgh.common.capability.bodyPart.ConditionAccessor;
 import com.lastimp.dgh.common.capability.bodyPart.base.AbstractBody;
@@ -9,74 +11,43 @@ import com.lastimp.dgh.common.capability.bodyPart.base.BodyCondition;
 import com.lastimp.dgh.common.capability.bodyPart.bodies.Blood;
 import com.lastimp.dgh.common.enums.BodyComponents;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.registries.ForgeRegistries;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Random;
-import java.util.logging.Logger;
 
 @Mod.EventBusSubscriber(modid = DGH_HealthcraftMod.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class HIVCompatHandler {
     private static final Random RANDOM = new Random();
-    private static final ResourceLocation DRUG_SYRINGE = new ResourceLocation("dghhealthcraft", "drug_syringe");
 
-    // 定义三个不同等级的 HIV
-    // 潜伏期 - 黄色
-    public static final ResourceLocation HIV_LATENT = ConditionAccessor.addCondition(
-            ResourceLocation.fromNamespaceAndPath(DGH_HealthcraftMod.MODID, "hiv_latent"),
-            name -> createLatentHivCondition(name));
-
-    // 发病期 - 橙色
-    public static final ResourceLocation HIV_ACTIVE = ConditionAccessor.addCondition(
-            ResourceLocation.fromNamespaceAndPath(DGH_HealthcraftMod.MODID, "hiv_active"),
-            name -> createActiveHivCondition(name));
-
-    // 艾滋病期 - 红色
+    // HIV 只有一个等级 - 艾滋病期（红色）
     public static final ResourceLocation HIV_AIDS = ConditionAccessor.addCondition(
             ResourceLocation.fromNamespaceAndPath(DGH_HealthcraftMod.MODID, "hiv_aids"),
-            name -> createAidsHivCondition(name));
-
-    // 兼容旧代码的引用
-    public static ResourceLocation HIV = HIV_LATENT;
+            name -> createHivCondition(name));
 
     /**
-     * 创建潜伏期 HIV 条件（黄色）
+     * 创建 HIV 条件（红色）
      */
-    private static BodyCondition createLatentHivCondition(ResourceLocation name) {
-        return createHivCondition(name,
-                0xFFFFFF55, // 黄色
-                false, true, 0.0f, 0.5f, 0.0f, 1.0f, 0.0f);
-    }
-
-    /**
-     * 创建发病期 HIV 条件（橙色）
-     */
-    private static BodyCondition createActiveHivCondition(ResourceLocation name) {
-        return createHivCondition(name,
-                0xFFFFA500, // 橙色
-                false, true, 0.0f, 0.5f, 0.0f, 1.0f, 0.0f);
-    }
-
-    /**
-     * 创建艾滋病期 HIV 条件（红色）
-     */
-    private static BodyCondition createAidsHivCondition(ResourceLocation name) {
+    private static BodyCondition createHivCondition(ResourceLocation name) {
         return createHivCondition(name,
                 0xFFFF0000, // 红色
-                false, true, 0.0f, 0.5f, 0.0f, 1.0f, 0.0f);
+                true, // isInjury
+                true, // isPain
+                0.0f, // healingSpeed (不自愈)
+                0.0f, // healingTS
+                0.0f, // minValue
+                1.0f, // maxValue
+                0.0f // defaultValue
+        );
     }
 
     /**
@@ -125,38 +96,27 @@ public class HIVCompatHandler {
     }
 
     /**
-     * 玩家交互时触发（使用污染药针感染）
+     * 玩家交互时触发（使用污染药针感染 HIV）
      */
     @SubscribeEvent
     public static void onPlayerInteract(PlayerInteractEvent.RightClickItem event) {
-        if (!(event.getEntity() instanceof Player)) return;
+        if (!(event.getEntity() instanceof Player))
+            return;
         Player player = (Player) event.getEntity();
-        if (player.level().isClientSide()) return;
+        if (player.level().isClientSide())
+            return;
 
-        if (event.getHand() != InteractionHand.MAIN_HAND) return;
+        ItemStack stack = player.getItemInHand(event.getHand());
+        if (stack.isEmpty())
+            return;
 
-        ItemStack stack = player.getMainHandItem();
-        if (stack.isEmpty()) return;
-
-        Item syringe = ForgeRegistries.ITEMS.getValue(DRUG_SYRINGE);
-        if (syringe == null || stack.getItem() != syringe) return;
-
-        boolean isContaminated = isSyringeContaminated(stack, player.level());
-
-        if (isContaminated && RANDOM.nextFloat() < Config.AIDS_CONTAMINATED_SYRINGE_CHANCE) {
-            applyInfection(player, HIV_LATENT, 0.03f);
-        }
-
-        if (isContaminated && RANDOM.nextFloat() < Config.SEPSIS_CONTAMINATED_SYRINGE_CHANCE) {
-            try {
-                applyInfection(player, SepsisCompatHandler.SEPSIS_MILD, 0.05f);
-            } catch (NoClassDefFoundError e) {
-                Logger.getLogger(HIVCompatHandler.class.getName())
-                        .warning("SepsisCompatHandler not found, skipping sepsis infection");
+        // 检查是否使用受污染的药针
+        if (stack.getItem() == DghHModItems.CONTAMINATED_SYRINGE.get()) {
+            // 以配置的概率感染 HIV
+            if (RANDOM.nextFloat() < Config.AIDS_CONTAMINATED_SYRINGE_CHANCE) {
+                applyInfection(player, HIV_AIDS, 0.1f); // 初始感染值为 0.1
             }
         }
-
-        markSyringeContaminated(stack, player.level());
     }
 
     /**
@@ -164,32 +124,34 @@ public class HIVCompatHandler {
      */
     @SubscribeEvent
     public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
-        if (event.phase != TickEvent.Phase.END) return;
+        if (event.phase != TickEvent.Phase.END)
+            return;
         Player player = event.player;
-        if (player.level().isClientSide()) return;
+        if (player.level().isClientSide())
+            return;
 
         float hivValue = getInfectionValue(player);
-        if (hivValue <= 0f) return;
-
-        // 获取当前感染等级
-        ResourceLocation currentCondition = getCurrentCondition(player);
+        if (hivValue <= 0f)
+            return;
 
         // 计算进展速度
         float progression = calculateProgression(hivValue, player);
 
         // 应用进展
-        if (currentCondition != null) {
-            applyInfection(player, currentCondition, progression);
+        applyInfection(player, HIV_AIDS, progression);
+
+        // 确保感染值不超过最大值
+        float newValue = getInfectionValue(player);
+        if (newValue > 1.0f) {
+            float excess = newValue - 1.0f;
+            applyInfection(player, HIV_AIDS, -excess);
         }
 
-        // 检查等级转换
-        checkAndUpdateInfectionLevel(player, hivValue + progression);
-
-        // 重新获取感染值
-        float newInfectionValue = getInfectionValue(player);
-
         // 根据 HIV 感染程度施加效果
-        applyHIVSymptoms(player, newInfectionValue);
+        applyHIVSymptoms(player, getInfectionValue(player));
+
+        // 检查低蛋白感染艾滋病
+        checkLowProteinInfection(player);
     }
 
     /**
@@ -198,15 +160,15 @@ public class HIVCompatHandler {
     private static float calculateProgression(float currentValue, Player player) {
         float progression;
 
-        // 潜伏期 (0-0.3) 进展较慢
+        // 感染初期 (0-0.3) 进展较慢
         if (currentValue < 0.3f) {
             progression = 0.000003f;
         }
-        // 发病期 (0.3-0.6) 进展中等
+        // 感染中期 (0.3-0.6) 进展中等
         else if (currentValue < 0.6f) {
             progression = 0.000007f;
         }
-        // 艾滋病期 (0.6-1.0) 进展加快
+        // 感染晚期 (0.6-1.0) 进展加快
         else {
             progression = 0.000012f;
         }
@@ -221,118 +183,20 @@ public class HIVCompatHandler {
     }
 
     /**
-     * 检查并更新感染等级
+     * 检查低蛋白感染艾滋病
      */
-    private static void checkAndUpdateInfectionLevel(Player player, float infectionValue) {
-        ResourceLocation targetCondition;
-        float targetValue = infectionValue;
-
-        if (infectionValue < 0.3f) {
-            targetCondition = HIV_LATENT;
-        } else if (infectionValue < 0.6f) {
-            targetCondition = HIV_ACTIVE;
-        } else {
-            targetCondition = HIV_AIDS;
-            targetValue = Math.min(infectionValue, 1.0f);
-        }
-
-        ResourceLocation currentCondition = getCurrentCondition(player);
-
-        if (currentCondition == null) {
-            applyInfection(player, targetCondition, targetValue);
+    private static void checkLowProteinInfection(Player player) {
+        // 如果已经感染，不再重复感染
+        if (isHIVActive(player))
             return;
-        }
 
-        if (!currentCondition.equals(targetCondition)) {
-            float currentValue = getInfectionValue(player);
-            clearAllInfections(player);
-            applyInfection(player, targetCondition, currentValue);
-        } else {
-            float currentValue = getInfectionValue(player);
-            if (currentValue > 1.0f) {
-                float excess = currentValue - 1.0f;
-                applyInfection(player, targetCondition, -excess);
+        double protein = NutritionCompatHandler.getProtein(player);
+        if (protein < Config.PROTEIN_NORMAL_MIN) {
+            // 蛋白质过低有概率感染艾滋病
+            if (RANDOM.nextFloat() < Config.LOW_PROTEIN_AIDS_INFECTION_CHANCE) {
+                applyInfection(player, HIV_AIDS, 0.05f);
             }
         }
-    }
-
-    /**
-     * 获取当前活动的感染条件
-     */
-    private static ResourceLocation getCurrentCondition(Player player) {
-        if (!HealthCapability.has(player)) return null;
-
-        return HealthCapability.getAndApply(player, health -> {
-            AbstractBody blood = health.getComponent(BodyComponents.BLOOD);
-            if (blood == null) return null;
-
-            if (blood.getBodyConditions().contains(HIV_LATENT)) return HIV_LATENT;
-            if (blood.getBodyConditions().contains(HIV_ACTIVE)) return HIV_ACTIVE;
-            if (blood.getBodyConditions().contains(HIV_AIDS)) return HIV_AIDS;
-            return null;
-        }, null);
-    }
-
-    /**
-     * 清除所有等级的感染
-     */
-    private static void clearAllInfections(Player player) {
-        if (!HealthCapability.has(player)) return;
-        clearInfection(player, HIV_LATENT);
-        clearInfection(player, HIV_ACTIVE);
-        clearInfection(player, HIV_AIDS);
-    }
-
-    /**
-     * 清除特定感染
-     */
-    private static void clearInfection(Player player, ResourceLocation condition) {
-        if (!HealthCapability.has(player)) return;
-        HealthCapability.getAndApply(player, health -> {
-            AbstractBody blood = health.getComponent(BodyComponents.BLOOD);
-            if (blood != null && blood.getBodyConditions().contains(condition)) {
-                float currentValue = blood.getConditionValue(condition);
-                blood.injury(condition, -currentValue);
-            }
-            return null;
-        }, null);
-    }
-
-    /**
-     * 检查药针是否污染
-     */
-    private static boolean isSyringeContaminated(ItemStack stack, Level level) {
-        if (!Config.SYRINGE_CONTAMINATION_ENABLED) return false;
-        if (stack.isEmpty()) return false;
-
-        if (stack.hasTag()) {
-            if (stack.getTag().contains("Contaminated") && stack.getTag().getBoolean("Contaminated")) {
-                return true;
-            }
-
-            if (stack.getTag().contains("ContaminationTimestamp")) {
-                long timestamp = stack.getTag().getLong("ContaminationTimestamp");
-                long duration = Config.SYRINGE_CONTAMINATION_DURATION_SECONDS * 20L;
-                if (level.getGameTime() - timestamp <= duration) {
-                    stack.getOrCreateTag().putBoolean("Contaminated", true);
-                    return true;
-                }
-                stack.getOrCreateTag().remove("Contaminated");
-                stack.getOrCreateTag().remove("ContaminationTimestamp");
-            }
-        }
-
-        boolean initial = RANDOM.nextFloat() < 0.3f;
-        if (initial) {
-            markSyringeContaminated(stack, level);
-        }
-        return initial;
-    }
-
-    private static void markSyringeContaminated(ItemStack stack, Level level) {
-        if (!Config.SYRINGE_CONTAMINATION_ENABLED || stack.isEmpty()) return;
-        stack.getOrCreateTag().putBoolean("Contaminated", true);
-        stack.getOrCreateTag().putLong("ContaminationTimestamp", level.getGameTime());
     }
 
     /**
@@ -341,14 +205,14 @@ public class HIVCompatHandler {
     private static void applyHIVSymptoms(Player player, float hivValue) {
         int duration = Config.PTSD_EFFECT_DURATION_TICKS;
 
-        // 潜伏期症状 (0.3以下)
-        if (hivValue >= 0.15f) {
+        // 初期症状 (0.1-0.3)
+        if (hivValue >= 0.1f && hivValue < 0.3f) {
             player.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, duration, 0));
         }
 
-        // 发病期症状 (0.3-0.6)
-        if (hivValue >= 0.3f) {
-            int weaknessLevel = Math.min(Config.PTSD_WEAKNESS_LEVEL, 2);
+        // 中期症状 (0.3-0.6)
+        if (hivValue >= 0.3f && hivValue < 0.6f) {
+            int weaknessLevel = Math.min(Config.PTSD_WEAKNESS_LEVEL, 1);
             player.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, duration, weaknessLevel));
         }
 
@@ -364,7 +228,7 @@ public class HIVCompatHandler {
             }
         }
 
-        // 晚期艾滋病症状 (0.8以上)
+        // 晚期症状 (0.8以上)
         if (hivValue >= 0.8f) {
             int weaknessLevel = Math.min(Config.PTSD_WEAKNESS_LEVEL + 2, 4);
             int fatigueLevel = Math.min(Config.PTSD_MINING_FATIGUE_LEVEL + 1, 3);
@@ -379,6 +243,7 @@ public class HIVCompatHandler {
                 player.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 100, 0));
             }
 
+            // 严重阶段造成伤害
             if (hivValue > 0.95f && player.tickCount % 100 == 0) {
                 player.hurt(player.damageSources().generic(), 1.0f);
             }
@@ -389,17 +254,13 @@ public class HIVCompatHandler {
      * 获取感染值
      */
     public static float getInfectionValue(Player player) {
-        if (!HealthCapability.has(player)) return 0f;
+        if (!HealthCapability.has(player))
+            return 0f;
         return HealthCapability.getAndApply(player, health -> {
             AbstractBody blood = health.getComponent(BodyComponents.BLOOD);
-            if (blood == null) return 0f;
+            if (blood == null)
+                return 0f;
 
-            if (blood.getBodyConditions().contains(HIV_LATENT)) {
-                return blood.getConditionValue(HIV_LATENT);
-            }
-            if (blood.getBodyConditions().contains(HIV_ACTIVE)) {
-                return blood.getConditionValue(HIV_ACTIVE);
-            }
             if (blood.getBodyConditions().contains(HIV_AIDS)) {
                 return blood.getConditionValue(HIV_AIDS);
             }
@@ -408,17 +269,11 @@ public class HIVCompatHandler {
     }
 
     /**
-     * 应用感染（通用方法，支持任意条件）
+     * 应用感染（公开方法）
      */
-    private static void applyInfection(Player player, ResourceLocation condition, float amount) {
-        if (!HealthCapability.has(player)) return;
-
-        if (amount > 0) {
-            ResourceLocation current = getCurrentCondition(player);
-            if (current != null && !current.equals(condition)) {
-                clearAllInfections(player);
-            }
-        }
+    public static void applyInfection(Player player, ResourceLocation condition, float amount) {
+        if (!HealthCapability.has(player))
+            return;
 
         HealthCapability.getAndApply(player, health -> {
             AbstractBody blood = health.getComponent(BodyComponents.BLOOD);
@@ -430,31 +285,21 @@ public class HIVCompatHandler {
     }
 
     /**
-     * 应用 HIV 治疗
-     */
-    public static void applyHIVHealing(Player player, float amount) {
-        if (!isHIVActive(player)) return;
-        ResourceLocation currentCondition = getCurrentCondition(player);
-        if (currentCondition != null) {
-            applyInfection(player, currentCondition, -amount);
-        }
-    }
-
-    /**
      * 治疗 HIV（使用拉米夫定）
+     * 有10%的概率完全治愈
      */
     public static void cureHIV(Player player) {
-        if (!isHIVActive(player)) return;
+        if (!isHIVActive(player))
+            return;
 
         float cureChance = Config.LAMIVUDINE_AIDS_CURE_CHANCE;
         if (RANDOM.nextFloat() < cureChance) {
             fullyCureHIV(player);
         } else {
             // 治疗失败，减少部分 HIV 值
-            ResourceLocation currentCondition = getCurrentCondition(player);
-            if (currentCondition != null) {
-                applyInfection(player, currentCondition, -0.2f);
-            }
+            float currentValue = getInfectionValue(player);
+            float reduction = Math.min(0.2f, currentValue);
+            applyInfection(player, HIV_AIDS, -reduction);
         }
     }
 
@@ -462,8 +307,13 @@ public class HIVCompatHandler {
      * 完全治愈 HIV
      */
     public static void fullyCureHIV(Player player) {
-        if (!isHIVActive(player)) return;
-        clearAllInfections(player);
+        if (!isHIVActive(player))
+            return;
+
+        float currentValue = getInfectionValue(player);
+        if (currentValue > 0) {
+            applyInfection(player, HIV_AIDS, -currentValue);
+        }
     }
 
     /**
@@ -475,13 +325,16 @@ public class HIVCompatHandler {
 
     /**
      * 获取感染阶段
-     * 0: 未感染, 1: 潜伏期, 2: 发病期, 3: 艾滋病期
+     * 0: 未感染, 1: 初期, 2: 中期, 3: 艾滋病期
      */
     public static int getHIVStage(Player player) {
         float value = getInfectionValue(player);
-        if (value <= 0.01f) return 0;
-        if (value < 0.3f) return 1;
-        if (value < 0.6f) return 2;
+        if (value <= 0.01f)
+            return 0;
+        if (value < 0.3f)
+            return 1;
+        if (value < 0.6f)
+            return 2;
         return 3;
     }
 
@@ -489,28 +342,16 @@ public class HIVCompatHandler {
      * 注册 HIV 条件到身体部位
      */
     public static void register() {
-        if (registered) return;
+        if (registered)
+            return;
         registered = true;
 
-        ConditionAccessor.get(HIV_LATENT);
-        ConditionAccessor.get(HIV_ACTIVE);
         ConditionAccessor.get(HIV_AIDS);
 
-        Blood.addCondition(List.of(HIV_LATENT, HIV_ACTIVE, HIV_AIDS));
-        ConditionAccessor.bloodConditions.add(HIV_LATENT);
-        ConditionAccessor.bloodConditions.add(HIV_ACTIVE);
+        Blood.addCondition(List.of(HIV_AIDS));
         ConditionAccessor.bloodConditions.add(HIV_AIDS);
-
-        ConditionAccessor.painConditions.add(HIV_LATENT);
-        ConditionAccessor.painConditions.add(HIV_ACTIVE);
         ConditionAccessor.painConditions.add(HIV_AIDS);
-
-        ConditionAccessor.injuryConditions.add(HIV_LATENT);
-        ConditionAccessor.injuryConditions.add(HIV_ACTIVE);
         ConditionAccessor.injuryConditions.add(HIV_AIDS);
-
-        ConditionAccessor.eyeVisible.add(HIV_LATENT);
-        ConditionAccessor.eyeVisible.add(HIV_ACTIVE);
         ConditionAccessor.eyeVisible.add(HIV_AIDS);
 
         refreshBloodConditionsCache();

@@ -139,9 +139,6 @@ public class PTSDCompatHandler {
         Player player = (Player) event.getEntity();
         if (player.level().isClientSide()) return;
 
-        // 检查触发概率
-        if (RANDOM.nextFloat() > Config.PTSD_TRIGGER_CHANCE) return;
-
         DamageSource source = event.getSource();
         LivingEntity attacker = null;
 
@@ -174,17 +171,17 @@ public class PTSDCompatHandler {
             // 如果有攻击者，增加对该攻击者的恐惧
             if (attacker != null) {
                 addFearForAttacker(player, attacker, damage, healthPercent);
-
-                // 低血量时触发恐惧效果
-                if (healthPercent < Config.PTSD_LOW_HP_THRESHOLD) {
-                    applyFearEffects(player, attacker, ptsdValue + ptsdIncrease);
-                }
             }
         }
 
-        // 低血量时被攻击，触发严重应激反应
-        if (healthPercent < Config.PTSD_LOW_HP_THRESHOLD && damage > 2.0f) {
-            triggerSevereStressResponse(player, attacker);
+        // 低血量时被攻击，触发恐惧效果
+        if (healthPercent < Config.PTSD_LOW_HP_THRESHOLD) {
+            applyFearEffects(player, attacker, ptsdValue + ptsdIncrease);
+            
+            // 触发严重应激反应
+            if (damage > 2.0f) {
+                triggerSevereStressResponse(player, attacker);
+            }
         }
     }
 
@@ -194,6 +191,7 @@ public class PTSDCompatHandler {
     private static float calculatePTSDIncrease(float damage, float healthPercent, float currentPTSD) {
         float baseIncrease = 0.0f;
 
+        // 根据伤害大小增加
         if (damage > 5.0f) {
             baseIncrease += 0.005f;
         } else if (damage > 2.0f) {
@@ -202,12 +200,14 @@ public class PTSDCompatHandler {
             baseIncrease += 0.001f;
         }
 
+        // 根据血量增加
         if (healthPercent < Config.PTSD_LOW_HP_THRESHOLD) {
             baseIncrease += 0.01f;
         } else if (healthPercent < 0.5f) {
             baseIncrease += 0.005f;
         }
 
+        // 当前 PTSD 值越高，增加越快
         baseIncrease *= (1.0f + currentPTSD);
         return Math.min(baseIncrease, 0.05f);
     }
@@ -313,35 +313,32 @@ public class PTSDCompatHandler {
      * 应用恐惧效果（低血量时触发）
      */
     private static void applyFearEffects(Player player, LivingEntity attacker, float ptsdValue) {
-        if (attacker == null) return;
+        float totalFear = ptsdValue;
 
-        UUID playerId = player.getUUID();
-        UUID attackerId = attacker.getUUID();
-
-        float fearLevel = PLAYER_FEAR_MAP.getOrDefault(playerId, new HashMap<>())
-                .getOrDefault(attackerId, 0.0f);
-
-        float totalFear = Math.min(ptsdValue + fearLevel, 1.0f);
-
-        float healthPercent = player.getHealth() / player.getMaxHealth();
-        if (healthPercent < Config.PTSD_LOW_HP_THRESHOLD) {
-            totalFear = Math.min(totalFear * 1.5f, 1.0f);
+        // 如果有攻击者，加入对该攻击者的恐惧
+        if (attacker != null) {
+            UUID playerId = player.getUUID();
+            UUID attackerId = attacker.getUUID();
+            float fearLevel = PLAYER_FEAR_MAP.getOrDefault(playerId, new HashMap<>())
+                    .getOrDefault(attackerId, 0.0f);
+            totalFear = Math.min(ptsdValue + fearLevel, 1.0f);
         }
 
-        if (totalFear > 0.3f) {
+        if (totalFear > 0.2f) {
             int duration = Config.PTSD_EFFECT_DURATION_TICKS;
+            
+            // 根据恐惧程度计算效果等级
             int weaknessLevel = Math.min(Config.PTSD_WEAKNESS_LEVEL + (int) (totalFear * 2), 4);
             int fatigueLevel = Math.min(Config.PTSD_MINING_FATIGUE_LEVEL + (int) (totalFear * 2), 4);
-            int slownessLevel = Math.min(Config.PTSD_SLOWNESS_LEVEL + (int) (totalFear), 3);
+            int slownessLevel = Math.min(Config.PTSD_SLOWNESS_LEVEL + (int) totalFear, 3);
 
+            // 施加虚弱、挖掘疲劳、缓慢效果
             player.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, duration, weaknessLevel));
             player.addEffect(new MobEffectInstance(MobEffects.DIG_SLOWDOWN, duration, fatigueLevel));
+            player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, duration, slownessLevel));
 
-            if (healthPercent < Config.PTSD_LOW_HP_THRESHOLD) {
-                player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, duration, slownessLevel));
-            }
-
-            if (totalFear > 0.8f) {
+            // 高恐惧时施加混乱效果
+            if (totalFear > 0.7f) {
                 player.addEffect(new MobEffectInstance(MobEffects.CONFUSION, duration / 2, 0));
             }
         }
@@ -353,8 +350,10 @@ public class PTSDCompatHandler {
     private static void triggerSevereStressResponse(Player player, LivingEntity attacker) {
         float ptsdValue = getInfectionValue(player);
 
-        if (ptsdValue > 0.5f) {
+        if (ptsdValue > 0.4f) {
             int duration = Config.PTSD_EFFECT_DURATION_TICKS;
+            
+            // 严重应激反应，更强的效果
             int weaknessLevel = Math.min(Config.PTSD_WEAKNESS_LEVEL + 2, 4);
             int fatigueLevel = Math.min(Config.PTSD_MINING_FATIGUE_LEVEL + 2, 4);
             int slownessLevel = Math.min(Config.PTSD_SLOWNESS_LEVEL + 1, 3);
@@ -362,8 +361,11 @@ public class PTSDCompatHandler {
             player.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, duration, weaknessLevel));
             player.addEffect(new MobEffectInstance(MobEffects.DIG_SLOWDOWN, duration, fatigueLevel));
             player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, duration, slownessLevel));
+            
+            // 短时间致盲效果
             player.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 40, 0));
 
+            // 严重应激反应会加重 PTSD
             ResourceLocation currentCondition = getCurrentCondition(player);
             if (currentCondition != null) {
                 applyInfection(player, currentCondition, 0.02f);
@@ -396,22 +398,21 @@ public class PTSDCompatHandler {
         float fearLevel = PLAYER_FEAR_MAP.getOrDefault(playerId, new HashMap<>())
                 .getOrDefault(entityId, 0.0f);
 
-        if (fearLevel > 0.5f) {
+        if (fearLevel > 0.3f) {
             float ptsdValue = getInfectionValue(player);
             float healthPercent = player.getHealth() / player.getMaxHealth();
+            
+            // 低血量时反应更强烈
             float multiplier = healthPercent < Config.PTSD_LOW_HP_THRESHOLD ? 1.5f : 1.0f;
-
-            int duration = (int) (Config.PTSD_EFFECT_DURATION_TICKS * 0.3f + fearLevel * 100 * multiplier);
+            int duration = (int) (Config.PTSD_EFFECT_DURATION_TICKS * 0.5f + fearLevel * 100 * multiplier);
+            
             int weaknessLevel = Math.min(Config.PTSD_WEAKNESS_LEVEL + (int) ((ptsdValue + fearLevel) * 1.5f), 4);
             int fatigueLevel = Math.min(Config.PTSD_MINING_FATIGUE_LEVEL + (int) ((ptsdValue + fearLevel) * 1.5f), 4);
+            int slownessLevel = Math.min(Config.PTSD_SLOWNESS_LEVEL + (int) ((ptsdValue + fearLevel) * 0.5f), 3);
 
             player.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, duration, weaknessLevel));
             player.addEffect(new MobEffectInstance(MobEffects.DIG_SLOWDOWN, duration, fatigueLevel));
-
-            if (fearLevel > 0.7f || healthPercent < Config.PTSD_LOW_HP_THRESHOLD) {
-                int slownessLevel = Math.min(Config.PTSD_SLOWNESS_LEVEL + 1, 3);
-                player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, duration, slownessLevel / 2));
-            }
+            player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, duration, slownessLevel));
         }
     }
 
@@ -433,31 +434,19 @@ public class PTSDCompatHandler {
         // 获取当前感染等级
         ResourceLocation currentCondition = getCurrentCondition(player);
 
-        // 自然恢复
+        // 自然恢复（睡觉时恢复更快）
         float recovery = calculateRecovery(player, ptsdValue);
 
         // 应用恢复
-        if (currentCondition != null) {
+        if (currentCondition != null && recovery > 0) {
             applyInfection(player, currentCondition, -recovery);
         }
 
         // 检查等级转换
-        checkAndUpdateInfectionLevel(player, ptsdValue - recovery);
+        float newValue = getInfectionValue(player);
+        checkAndUpdateInfectionLevel(player, newValue);
 
-        // 低血量时的持续效果
-        float healthPercent = player.getHealth() / player.getMaxHealth();
-        if (healthPercent < Config.PTSD_LOW_HP_THRESHOLD && ptsdValue > 0.3f) {
-            int duration = Config.PTSD_EFFECT_DURATION_TICKS / 10;
-            int weaknessLevel = Math.min(Config.PTSD_WEAKNESS_LEVEL, 2);
-            int fatigueLevel = Math.min(Config.PTSD_MINING_FATIGUE_LEVEL, 2);
-            int slownessLevel = Math.min(Config.PTSD_SLOWNESS_LEVEL, 2);
-
-            player.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, duration, weaknessLevel / 2));
-            player.addEffect(new MobEffectInstance(MobEffects.DIG_SLOWDOWN, duration, fatigueLevel / 2));
-            player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, duration, slownessLevel / 3));
-        }
-
-        // 根据 PTSD 程度施加症状
+        // 根据 PTSD 程度施加持续症状
         applyPtsdSymptoms(player, ptsdValue);
     }
 
@@ -465,19 +454,23 @@ public class PTSDCompatHandler {
      * 计算恢复速度
      */
     private static float calculateRecovery(Player player, float ptsdValue) {
-        float recovery = 0.00001f;
+        float recovery = 0.00002f; // 基础恢复速度
 
+        // 睡觉时恢复更快
         if (player.isSleeping()) {
             recovery *= (1 + Config.PTSD_SLEEP_RELIEF_FACTOR);
         }
 
+        // 舒适环境有助于恢复
         if (hasComfortableEnvironment(player)) {
-            recovery *= 1.5f;
+            recovery *= 1.2f;
         }
 
         // 严重 PTSD 恢复更慢
-        if (ptsdValue > 0.6f) {
-            recovery *= 0.5f;
+        if (ptsdValue > 0.7f) {
+            recovery *= 0.6f;
+        } else if (ptsdValue > 0.4f) {
+            recovery *= 0.8f;
         }
 
         return recovery;
@@ -487,34 +480,34 @@ public class PTSDCompatHandler {
      * 应用 PTSD 症状
      */
     private static void applyPtsdSymptoms(Player player, float ptsdValue) {
-        int duration = Config.PTSD_EFFECT_DURATION_TICKS;
+        int duration = Config.PTSD_EFFECT_DURATION_TICKS / 2;
 
-        // 轻度症状 (0.3以下)
-        if (ptsdValue >= 0.15f) {
+        // 轻度症状 (0.2-0.4)
+        if (ptsdValue >= 0.2f && ptsdValue < 0.4f) {
             player.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, duration, 0));
         }
-
-        // 中度症状 (0.3-0.6)
-        if (ptsdValue >= 0.3f) {
+        // 中度症状 (0.4-0.7)
+        else if (ptsdValue >= 0.4f && ptsdValue < 0.7f) {
             player.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, duration, 1));
             player.addEffect(new MobEffectInstance(MobEffects.DIG_SLOWDOWN, duration, 0));
-        }
-
-        // 重度症状 (0.6以上)
-        if (ptsdValue >= 0.6f) {
-            player.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, duration, 2));
-            player.addEffect(new MobEffectInstance(MobEffects.DIG_SLOWDOWN, duration, 1));
-            player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, duration, 0));
-        }
-
-        // 极重度症状 (0.8以上)
-        if (ptsdValue >= 0.8f) {
-            player.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, duration, 3));
-            player.addEffect(new MobEffectInstance(MobEffects.DIG_SLOWDOWN, duration, 2));
-            player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, duration, 1));
             
-            if (RANDOM.nextFloat() < 0.005f) {
-                player.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 100, 0));
+            if (RANDOM.nextFloat() < 0.01f) {
+                player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, duration / 2, 0));
+            }
+        }
+        // 重度症状 (0.7以上)
+        else if (ptsdValue >= 0.7f) {
+            int weaknessLevel = Math.min(Config.PTSD_WEAKNESS_LEVEL + 1, 3);
+            int fatigueLevel = Math.min(Config.PTSD_MINING_FATIGUE_LEVEL + 1, 3);
+            int slownessLevel = Math.min(Config.PTSD_SLOWNESS_LEVEL, 2);
+            
+            player.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, duration, weaknessLevel));
+            player.addEffect(new MobEffectInstance(MobEffects.DIG_SLOWDOWN, duration, fatigueLevel));
+            player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, duration / 2, slownessLevel));
+            
+            // 极重度症状时偶尔混乱
+            if (ptsdValue > 0.85f && RANDOM.nextFloat() < 0.005f) {
+                player.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 80, 0));
             }
         }
     }
@@ -552,13 +545,20 @@ public class PTSDCompatHandler {
         float ptsdValue = getInfectionValue(player);
         if (ptsdValue <= 0) return;
 
+        // 镇静剂效果：减少 PTSD 值
         float relief = ptsdValue * Config.SEDATIVE_PTSD_RELIEF_FACTOR;
         ResourceLocation currentCondition = getCurrentCondition(player);
         if (currentCondition != null) {
             applyInfection(player, currentCondition, -relief);
         }
 
+        // 同时减少恐惧记忆
         reduceFears(player, Config.SEDATIVE_PTSD_RELIEF_FACTOR * 0.3f);
+        
+        // 清除部分负面效果
+        player.removeEffect(MobEffects.WEAKNESS);
+        player.removeEffect(MobEffects.DIG_SLOWDOWN);
+        player.removeEffect(MobEffects.MOVEMENT_SLOWDOWN);
     }
 
     /**
@@ -568,10 +568,14 @@ public class PTSDCompatHandler {
         Level level = player.level();
         BlockPos pos = player.blockPosition();
 
+        // 检查亮度
         int lightLevel = level.getMaxLocalRawBrightness(pos);
         if (lightLevel < 7) return false;
 
+        // 检查是否有遮蔽
         boolean hasShelter = level.getBlockState(pos.above()).isSolid();
+        
+        // 检查是否在村庄或床附近
         boolean nearVillage = isNearVillage(player);
         boolean nearBed = isNearBed(player);
 
@@ -591,6 +595,7 @@ public class PTSDCompatHandler {
 
         if (!villagers.isEmpty()) return true;
 
+        // 检查附近是否有钟
         for (int x = -16; x <= 16; x++) {
             for (int z = -16; z <= 16; z++) {
                 BlockPos checkPos = pos.offset(x, 0, z);

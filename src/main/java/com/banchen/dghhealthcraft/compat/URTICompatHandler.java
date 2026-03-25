@@ -2,6 +2,7 @@ package com.banchen.dghhealthcraft.compat;
 
 import com.banchen.dghhealthcraft.Config;
 import com.banchen.dghhealthcraft.DGH_HealthcraftMod;
+import com.banchen.dghhealthcraft.nutrition.NutritionCompatHandler;
 import com.lastimp.dgh.common.capability.HealthCapability;
 import com.lastimp.dgh.common.capability.bodyPart.ConditionAccessor;
 import com.lastimp.dgh.common.capability.bodyPart.base.AbstractBody;
@@ -190,13 +191,13 @@ public class URTICompatHandler {
 
         // 根据交互类型设置基础概率
         if (isLeftClick) {
-            chance = Config.UPPER_RESPIRATORY_INFECTION_LEFT_CLICK_CHANCE;
+            chance = Config.URTI_LEFT_CLICK_INFECTION_CHANCE;
         } else if (isRightClick) {
-            chance = Config.UPPER_RESPIRATORY_INFECTION_RIGHT_CLICK_CHANCE;
+            chance = Config.URTI_RIGHT_CLICK_INFECTION_CHANCE;
         }
 
-        // 雨天加成
-        chance *= Config.UPPER_RESPIRATORY_INFECTION_RAIN_CHANCE;
+        // 雨天加成（乘以雨天感染概率）
+        chance *= Config.URTI_RAIN_INFECTION_CHANCE;
 
         // 低蛋白加成
         double protein = NutritionCompatHandler.getProtein(player);
@@ -439,35 +440,29 @@ public class URTICompatHandler {
      * 处理睡眠自愈
      */
     private static void handleSleepHealing(Player player, float infectionValue) {
-        // 重型无法自愈
-        if (infectionValue >= 0.7f && Config.UPPER_RESPIRATORY_INFECTION_SEVERE_CANNOT_HEAL) {
-            return;
-        }
+        // 检查睡眠自愈概率
+        float healChance = Config.URTI_SLEEP_HEAL_CHANCE;
 
         // 每 100 tick（5秒）检查一次自愈
-        if (player.tickCount % 100 == 0) {
-            float healChance = Config.UPPER_RESPIRATORY_INFECTION_SLEEP_HEAL_CHANCE;
+        if (player.tickCount % 100 == 0 && RANDOM.nextFloat() < healChance) {
+            // 检查是否有足够的营养元素
+            double protein = NutritionCompatHandler.getProtein(player);
+            double sugar = NutritionCompatHandler.getSugar(player);
+            double fat = NutritionCompatHandler.getFat(player);
 
-            if (RANDOM.nextFloat() < healChance) {
-                // 检查是否有足够的营养元素
-                double protein = NutritionCompatHandler.getProtein(player);
-                double sugar = NutritionCompatHandler.getSugar(player);
-                double fat = NutritionCompatHandler.getFat(player);
+            float nutrientCost = Config.UPPER_RESPIRATORY_INFECTION_NUTRIENT_CONSUMPTION;
 
-                float nutrientCost = Config.UPPER_RESPIRATORY_INFECTION_NUTRIENT_CONSUMPTION;
+            // 检查营养是否充足
+            if (protein >= nutrientCost && sugar >= nutrientCost && fat >= nutrientCost) {
+                // 消耗营养元素
+                NutritionCompatHandler.addProtein(player, -nutrientCost);
+                NutritionCompatHandler.addSugar(player, -nutrientCost);
+                NutritionCompatHandler.addFat(player, -nutrientCost);
 
-                // 检查营养是否充足
-                if (protein >= nutrientCost && sugar >= nutrientCost && fat >= nutrientCost) {
-                    // 消耗营养元素
-                    NutritionCompatHandler.addProtein(player, -nutrientCost);
-                    NutritionCompatHandler.addSugar(player, -nutrientCost);
-                    NutritionCompatHandler.addFat(player, -nutrientCost);
-
-                    // 治疗感染
-                    float healAmount = 0.1f;
-                    ResourceLocation currentCondition = getCurrentCondition(player);
-                    applyInfection(player, currentCondition, -healAmount);
-                }
+                // 治疗感染
+                float healAmount = 0.1f;
+                ResourceLocation currentCondition = getCurrentCondition(player);
+                applyInfection(player, currentCondition, -healAmount);
             }
         }
     }
@@ -553,7 +548,7 @@ public class URTICompatHandler {
     /**
      * 应用感染（治疗使用负值）
      */
-    private static void applyInfection(Player player, ResourceLocation condition, float amount) {
+    public static void applyInfection(Player player, ResourceLocation condition, float amount) {
         if (!HealthCapability.has(player))
             return;
 

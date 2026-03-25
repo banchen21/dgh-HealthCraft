@@ -1,6 +1,5 @@
-package com.banchen.dghhealthcraft.item;
+package com.banchen.dghhealthcraft.nutrition;
 
-import com.banchen.dghhealthcraft.compat.NutritionCompatHandler;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;

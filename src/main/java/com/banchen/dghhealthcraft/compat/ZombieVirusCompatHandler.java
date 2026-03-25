@@ -201,18 +201,19 @@ public class ZombieVirusCompatHandler {
         if (player.level().isClientSide())
             return;
 
+        // 检查阻断剂是否生效
+        if (isBlockerActive(player)) {
+            return;
+        }
+
         LivingEntity attacker = null;
         if (event.getSource().getEntity() instanceof LivingEntity) {
             attacker = (LivingEntity) event.getSource().getEntity();
         }
 
-        if (isBlockerActive(player)) {
-            return;
-        }
-
         if (attacker != null && isValidZombieEntity(attacker)) {
-            float zombificationValue = getZombificationValue(player);
-            if (zombificationValue > 0.1f)
+            // 如果已经尸变，不再重复感染
+            if (isZombified(player))
                 return;
 
             float chance = Config.CORPSE_POISON_UNDEAD_ATTACK_CHANCE;
@@ -239,12 +240,16 @@ public class ZombieVirusCompatHandler {
         float virusValue = getInfectionValue(player);
         float zombificationValue = getZombificationValue(player);
 
+        // 尸变状态处理
         if (zombificationValue > 0) {
             handleZombification(player, zombificationValue);
             return;
         }
 
         if (virusValue > 0) {
+            // 感染尸毒后，上呼吸道感染无法自愈
+            preventUrtiHealing(player);
+
             // 获取当前感染等级
             ResourceLocation currentCondition = getCurrentCondition(player);
 
@@ -271,6 +276,21 @@ public class ZombieVirusCompatHandler {
     }
 
     /**
+     * 感染尸毒后阻止上呼吸道感染自愈
+     */
+    private static void preventUrtiHealing(Player player) {
+        // 如果有上呼吸道感染，阻止其自愈
+        if (URTICompatHandler.isURTIActive(player)) {
+            float urtiValue = URTICompatHandler.getInfectionValue(player);
+            if (urtiValue > 0) {
+                // 阻止自然恢复，甚至可以缓慢恶化
+                // 这里通过不调用URTICompatHandler的自然恢复来实现
+                // 在URTICompatHandler中会检查是否感染尸毒
+            }
+        }
+    }
+
+    /**
      * 计算尸毒恶化速度
      */
     private static float calculateProgression(float currentValue, Player player) {
@@ -292,7 +312,7 @@ public class ZombieVirusCompatHandler {
             tickBaseProgress = 0.3f / (days * 24000f);
         }
 
-        // 睡眠时恶化更快
+        // 睡眠时无法消耗营养元素自我调节，恶化更快
         if (player.isSleeping()) {
             tickBaseProgress *= 1.5f;
         }
@@ -308,6 +328,155 @@ public class ZombieVirusCompatHandler {
         }
 
         return tickBaseProgress;
+    }
+
+    /**
+     * 处理尸变状态
+     */
+    private static void handleZombification(Player player, float zombificationValue) {
+        // 每天（24000 tick）恶化一次
+        if (player.tickCount % 24000 == 0) {
+            float deterioration = Config.CORPSE_TRANSFORMATION_DAILY_DETERIORATION;
+            deteriorateAllBodyParts(player, zombificationValue * deterioration);
+        }
+
+        applyZombificationEffects(player, zombificationValue);
+
+        // 所有部位失去功能后死亡
+        if (Config.DEATH_ON_ALL_PARTS_LOST && checkAllPartsFailed(player)) {
+            player.kill();
+        }
+    }
+
+    /**
+     * 所有部位每天恶化
+     */
+    private static void deteriorateAllBodyParts(Player player, float deteriorationAmount) {
+        if (deteriorationAmount <= 0f || !HealthCapability.has(player))
+            return;
+
+        HealthCapability.getAndApply(player, health -> {
+            for (BodyComponents component : BodyComponents.values()) {
+                AbstractBody body = health.getComponent(component);
+                if (body == null)
+                    continue;
+
+                // 遍历所有身体条件，排除尸毒和尸变相关的条件
+                for (ResourceLocation condition : body.getBodyConditions()) {
+                    if (condition.equals(ZOMBIFICATION) ||
+                            condition.equals(ZOMBIE_VIRUS_EARLY) ||
+                            condition.equals(ZOMBIE_VIRUS_MID) ||
+                            condition.equals(ZOMBIE_VIRUS_LATE)) {
+                        continue;
+                    }
+
+                    BodyCondition cond = ConditionAccessor.get(condition);
+                    if (cond == null)
+                        continue;
+                    // 只恶化伤害和疼痛类型
+                    if (!cond.isInjury() && !cond.isPain())
+                        continue;
+
+                    float currentValue = body.getConditionValue(condition);
+                    if (currentValue >= cond.maxValue() - 1e-6f)
+                        continue;
+
+                    float applyAmount = Math.min(deteriorationAmount, cond.maxValue() - currentValue);
+                    if (applyAmount <= 0f)
+                        continue;
+
+                    body.injury(condition, applyAmount);
+                }
+            }
+            return null;
+        }, null);
+    }
+
+    /**
+     * 检查所有部位是否都失去功能
+     */
+    private static boolean checkAllPartsFailed(Player player) {
+        if (!HealthCapability.has(player))
+            return true;
+
+        return HealthCapability.getAndApply(player, health -> {
+            int failedParts = 0;
+            int totalParts = 0;
+
+            for (BodyComponents component : BodyComponents.values()) {
+                AbstractBody body = health.getComponent(component);
+                if (body != null) {
+                    totalParts++;
+                    boolean isFailed = false;
+                    // 检查身体部位是否有超过80%损伤
+                    for (ResourceLocation condition : body.getBodyConditions()) {
+                        if (condition.equals(ZOMBIFICATION))
+                            continue;
+                        BodyCondition cond = ConditionAccessor.get(condition);
+                        if (cond != null && (cond.isInjury() || cond.isPain())) {
+                            float value = body.getConditionValue(condition);
+                            if (value > 0.8f) {
+                                isFailed = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (isFailed)
+                        failedParts++;
+                }
+            }
+
+            return totalParts > 0 && failedParts >= totalParts;
+        }, true);
+    }
+
+    /**
+     * 应用阻断剂（免疫尸毒感染一段时间）
+     */
+    public static void applyBlocker(Player player) {
+        if (player == null)
+            return;
+        int durationTicks = Config.BLOCKING_AGENT_DURATION_SECONDS * 20;
+        activateBlocker(player, durationTicks);
+    }
+
+    /**
+     * 缓解尸毒（由靶向剂调用）
+     */
+    public static void alleviateZombieVirus(Player player) {
+        float currentValue = getInfectionValue(player);
+        if (currentValue <= 0)
+            return;
+
+        float reduction = Config.TARGETED_AGENT_DETERIORATION_REDUCTION;
+        ResourceLocation currentCondition = getCurrentCondition(player);
+        if (currentCondition != null) {
+            float reduceAmount = currentValue * reduction;
+            applyInfection(player, currentCondition, -reduceAmount);
+        }
+    }
+
+    /**
+     * 缓解尸变（由靶向剂调用）
+     */
+    public static void alleviateZombification(Player player) {
+        if (!HealthCapability.has(player))
+            return;
+        HealthCapability.getAndApply(player, health -> {
+            for (BodyComponents component : BodyComponents.values()) {
+                AbstractBody body = health.getComponent(component);
+                if (body != null && body.getBodyConditions().contains(ZOMBIFICATION)) {
+                    float currentValue = body.getConditionValue(ZOMBIFICATION);
+                    if (currentValue > 0) {
+                        float reduction = Config.TARGETED_AGENT_DETERIORATION_REDUCTION;
+                        float reduceAmount = currentValue * reduction;
+                        body.injury(ZOMBIFICATION, -reduceAmount);
+                    }
+                    break;
+                }
+            }
+            return null;
+        }, null);
     }
 
     /**
@@ -402,7 +571,7 @@ public class ZombieVirusCompatHandler {
     /**
      * 应用感染（治疗使用负值）
      */
-    private static void applyInfection(Player player, ResourceLocation condition, float amount) {
+    public static void applyInfection(Player player, ResourceLocation condition, float amount) {
         if (!HealthCapability.has(player))
             return;
 
@@ -469,64 +638,6 @@ public class ZombieVirusCompatHandler {
     }
 
     /**
-     * 处理尸变状态
-     */
-    private static void handleZombification(Player player, float zombificationValue) {
-        if (player.tickCount % 24000 == 0) {
-            float deterioration = Config.CORPSE_TRANSFORMATION_DAILY_DETERIORATION;
-            deteriorateAllBodyParts(player, zombificationValue * deterioration);
-        }
-
-        applyZombificationEffects(player, zombificationValue);
-
-        if (Config.DEATH_ON_ALL_PARTS_LOST && checkAllPartsFailed(player)) {
-            player.kill();
-        }
-    }
-
-    /**
-     * 所有部位每天恶化
-     */
-    private static void deteriorateAllBodyParts(Player player, float deteriorationAmount) {
-        if (deteriorationAmount <= 0f || !HealthCapability.has(player))
-            return;
-
-        HealthCapability.getAndApply(player, health -> {
-            for (BodyComponents component : BodyComponents.values()) {
-                AbstractBody body = health.getComponent(component);
-                if (body == null)
-                    continue;
-
-                for (ResourceLocation condition : body.getBodyConditions()) {
-                    if (condition.equals(ZOMBIFICATION) ||
-                            condition.equals(ZOMBIE_VIRUS_EARLY) ||
-                            condition.equals(ZOMBIE_VIRUS_MID) ||
-                            condition.equals(ZOMBIE_VIRUS_LATE)) {
-                        continue;
-                    }
-
-                    BodyCondition cond = ConditionAccessor.get(condition);
-                    if (cond == null)
-                        continue;
-                    if (!cond.isInjury() && !cond.isPain())
-                        continue;
-
-                    float currentValue = body.getConditionValue(condition);
-                    if (currentValue >= cond.maxValue() - 1e-6f)
-                        continue;
-
-                    float applyAmount = Math.min(deteriorationAmount, cond.maxValue() - currentValue);
-                    if (applyAmount <= 0f)
-                        continue;
-
-                    body.injury(condition, applyAmount);
-                }
-            }
-            return null;
-        }, null);
-    }
-
-    /**
      * 应用尸变效果
      */
     private static void applyZombificationEffects(Player player, float zombificationValue) {
@@ -560,38 +671,6 @@ public class ZombieVirusCompatHandler {
                         }
                     });
         }
-    }
-
-    /**
-     * 检查是否所有部位都失去功能
-     */
-    private static boolean checkAllPartsFailed(Player player) {
-        if (!HealthCapability.has(player))
-            return true;
-
-        return HealthCapability.getAndApply(player, health -> {
-            int failedParts = 0;
-            int totalParts = 0;
-
-            for (BodyComponents component : BodyComponents.values()) {
-                AbstractBody body = health.getComponent(component);
-                if (body != null) {
-                    totalParts++;
-                    boolean isFailed = false;
-                    for (ResourceLocation condition : body.getBodyConditions()) {
-                        float value = body.getConditionValue(condition);
-                        if (value > 0.8f) {
-                            isFailed = true;
-                            break;
-                        }
-                    }
-                    if (isFailed)
-                        failedParts++;
-                }
-            }
-
-            return totalParts > 0 && failedParts >= totalParts;
-        }, true);
     }
 
     /**
@@ -660,43 +739,6 @@ public class ZombieVirusCompatHandler {
                 return false;
             return blood.getConditionValue(BodyCondition.IMMUNITY) < 0.3f;
         }, false);
-    }
-
-    /**
-     * 缓解尸毒（可由靶向剂调用）
-     */
-    public static void alleviateZombieVirus(Player player) {
-        float currentValue = getInfectionValue(player);
-        if (currentValue <= 0)
-            return;
-
-        float reduction = Config.TARGETED_AGENT_DETERIORATION_REDUCTION;
-        ResourceLocation currentCondition = getCurrentCondition(player);
-        if (currentCondition != null) {
-            applyInfection(player, currentCondition, -currentValue * reduction);
-        }
-    }
-
-    /**
-     * 缓解尸变（使用靶向剂）
-     */
-    public static void alleviateZombification(Player player) {
-        if (!HealthCapability.has(player))
-            return;
-        HealthCapability.getAndApply(player, health -> {
-            for (BodyComponents component : BodyComponents.values()) {
-                AbstractBody body = health.getComponent(component);
-                if (body != null && body.getBodyConditions().contains(ZOMBIFICATION)) {
-                    float currentValue = body.getConditionValue(ZOMBIFICATION);
-                    if (currentValue > 0) {
-                        float reduction = Config.TARGETED_AGENT_DETERIORATION_REDUCTION;
-                        body.injury(ZOMBIFICATION, -currentValue * reduction);
-                    }
-                    break;
-                }
-            }
-            return null;
-        }, null);
     }
 
     /**

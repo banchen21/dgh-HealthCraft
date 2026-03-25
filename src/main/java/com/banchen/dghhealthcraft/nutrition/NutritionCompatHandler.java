@@ -1,15 +1,19 @@
-package com.banchen.dghhealthcraft.compat;
+package com.banchen.dghhealthcraft.nutrition;
 
-import com.banchen.dghhealthcraft.Config;
+import com.banchen.dghhealthcraft.compat.URTICompatHandler;
 import com.lastimp.dgh.common.capability.HealthCapability;
+import com.lastimp.dgh.common.capability.bodyPart.base.AbstractBody;
 import com.lastimp.dgh.common.enums.BodyComponents;
+import com.banchen.dghhealthcraft.Config;
 import com.banchen.dghhealthcraft.DGH_HealthcraftMod;
+
 import net.minecraft.world.effect.MobEffects;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.living.LivingEntityUseItemEvent;
@@ -33,7 +37,7 @@ public class NutritionCompatHandler {
     private record NutritionState(double water, double sugar, double fat, double protein, double salt, double vitamin,
             double fiber) {
         static NutritionState create() {
-            return new NutritionState(1.0, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5);
+            return new NutritionState(0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5);
         }
 
         static NutritionState fromTag(CompoundTag tag) {
@@ -61,11 +65,11 @@ public class NutritionCompatHandler {
             return tag;
         }
 
-        NutritionState tick(boolean sleeping, boolean jumping) {
+        NutritionState tick(boolean sleeping, boolean jumping, Player player) {
             // 基础水分消耗
             double waterDecrease = sleeping ? Config.NUTRITION_SLEEP_WATER_DECREASE_RATE
                     : Config.NUTRITION_WATER_DECREASE_RATE;
-            double w = this.water - waterDecrease;
+            double w = this.water - waterDecrease / 100;
 
             // 高糖跳跃额外消耗水分
             if (jumping && this.sugar > Config.SACCHARIDES_NORMAL_MAX / 100) {
@@ -79,6 +83,16 @@ public class NutritionCompatHandler {
             double st = this.salt;
             double v = this.vitamin;
             double fi = this.fiber;
+
+            // 活动消耗（移动、跳跃等）
+            if (!sleeping && (player.zza != 0 || player.xxa != 0)) {
+                s -= 0.0005;
+                f -= 0.0003;
+                if (player.isSprinting()) {
+                    s -= 0.001;
+                    f -= 0.0005;
+                }
+            }
 
             // 缺水时，糖、脂、蛋白资源无法充分利用
             if (Config.WATER_DEFICIENCY_BLOCK_METABOLISM && w < Config.WATER_NORMAL_MIN / 100) {
@@ -131,7 +145,7 @@ public class NutritionCompatHandler {
         persistent.put(NBT_KEY, state.toTag());
     }
 
-    // ==================== 获取营养值方法 ====================
+    // ==================== 获取营养值方法（返回百分比 0-100） ====================
     public static double getWater(Player player) {
         return state(player).water * 100;
     }
@@ -267,7 +281,7 @@ public class NutritionCompatHandler {
 
         NutritionState old = state(player);
         boolean sleeping = player.isSleeping();
-        NutritionState updated = old.tick(sleeping, false);
+        NutritionState updated = old.tick(sleeping, false, player);
         setState(player, updated);
 
         // 水分配置效果
@@ -303,7 +317,6 @@ public class NutritionCompatHandler {
                 player.addEffect(new MobEffectInstance(MobEffects.HUNGER, 40, 0));
             }
             if (Config.PROTEIN_LOW_NO_NATURAL_REGENERATION) {
-                // 阻止自然恢复通过持续伤害模拟
                 if (player.tickCount % 100 == 0 && player.getHealth() < player.getMaxHealth()) {
                     player.hurt(player.damageSources().starve(), 0.5f);
                 }
@@ -329,7 +342,7 @@ public class NutritionCompatHandler {
         if (vitamin < Config.VITAMIN_NORMAL_MIN) {
             // 低维生素增加感染风险
             if (random.nextDouble() < 0.0005) {
-                applyCondition(player, URTICompatHandler.URTI, 0.01f);
+                applyURTIInfection(player, 0.01f);
             }
         } else if (vitamin > Config.VITAMIN_NORMAL_MAX) {
             if (Config.VITAMIN_HIGH_HALF_HUNGER) {
@@ -342,7 +355,7 @@ public class NutritionCompatHandler {
         if (fiber < Config.DIETARY_FIBER_NORMAL_MIN) {
             // 膳食纤维不足增加致病风险
             if (random.nextDouble() < 0.0005) {
-                applyCondition(player, URTICompatHandler.URTI, 0.01f);
+                applyURTIInfection(player, 0.01f);
             }
         } else if (fiber > Config.DIETARY_FIBER_NORMAL_MAX) {
             if (Config.DIETARY_FIBER_HIGH_MALABSORPTION) {
@@ -355,19 +368,18 @@ public class NutritionCompatHandler {
             }
         }
 
-        // 低蛋白仅产生营养性症状，不再直接触发 HIV/脓毒症
+        // 低蛋白仅产生营养性症状
         if (protein < Config.PROTEIN_NORMAL_MIN && random.nextDouble() < 0.0005) {
             player.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 40, 0));
         }
 
         // 脓毒症相关衰竭
         if (HealthCapability.has(player)) {
-            float sepsis = HealthCapability.getAndApply(player,
-                    health -> health.getComponent(BodyComponents.BLOOD).getConditionValue(SepsisCompatHandler.SEPSIS),
-                    0f);
+            float sepsis = URTICompatHandler.getInfectionValue(player);
             if (sepsis > 0.01f) {
                 // 行动时额外消耗糖类和油脂
-                if (player.isSprinting() || player.isSwimming() || player.isFallFlying()) {
+                if (player.isSprinting() || player.isSwimming() || player.isFallFlying() ||
+                        player.zza != 0 || player.xxa != 0) {
                     double sugarCost = 0.01 * sepsis * Config.SEPSIS_ACTION_EXTRA_SUGAR_COST;
                     double fatCost = 0.005 * sepsis * Config.SEPSIS_ACTION_EXTRA_FAT_COST;
                     addSugar(player, -sugarCost);
@@ -397,7 +409,7 @@ public class NutritionCompatHandler {
         // 睡眠导致水分下降
         double waterDecrease = Config.WATER_SLEEP_DECREASE_RATE / 100;
         st = new NutritionState(
-                Math.max(0.0, st.water - waterDecrease / 100),
+                Math.max(0.0, st.water - waterDecrease),
                 st.sugar, st.fat, st.protein, st.salt, st.vitamin, st.fiber);
         setState(player, st);
     }
@@ -528,20 +540,40 @@ public class NutritionCompatHandler {
             addVitamin(player, values.vitamin);
         if (values.fiber != 0)
             addFiber(player, values.fiber);
-
     }
 
-    private static void applyCondition(Player player, net.minecraft.resources.ResourceLocation condition,
-            float amount) {
+    /**
+     * 应用上呼吸道感染
+     */
+    private static void applyURTIInfection(Player player, float amount) {
+        if (!URTICompatHandler.isURTIActive(player)) {
+            URTICompatHandler.applyInfection(player, URTICompatHandler.URTI_MILD, amount);
+        } else { 
+            ResourceLocation current = getCurrentURTICondition(player);
+            if (current != null) {
+                URTICompatHandler.applyInfection(player, current, amount);
+            }
+        }
+    }
+
+    /**
+     * 获取当前 URTI 条件
+     */
+    private static ResourceLocation getCurrentURTICondition(Player player) {
         if (!HealthCapability.has(player))
-            return;
-        HealthCapability.getAndApply(player, health -> {
+            return null;
+
+        return HealthCapability.getAndApply(player, health -> {
             for (BodyComponents component : BodyComponents.values()) {
-                var body = health.getComponent(component);
-                if (body == null || !body.getBodyConditions().contains(condition))
+                AbstractBody body = health.getComponent(component);
+                if (body == null)
                     continue;
-                body.injury(condition, amount);
-                return null;
+                if (body.getBodyConditions().contains(URTICompatHandler.URTI_MILD))
+                    return URTICompatHandler.URTI_MILD;
+                if (body.getBodyConditions().contains(URTICompatHandler.URTI_MODERATE))
+                    return URTICompatHandler.URTI_MODERATE;
+                if (body.getBodyConditions().contains(URTICompatHandler.URTI_SEVERE))
+                    return URTICompatHandler.URTI_SEVERE;
             }
             return null;
         }, null);

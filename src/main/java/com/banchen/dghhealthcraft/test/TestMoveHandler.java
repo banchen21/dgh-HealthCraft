@@ -36,7 +36,7 @@ public class TestMoveHandler {
         // 我们将注入固定值给已注册体部条件
         applyCondition(player, URTICompatHandler.URTI, 0.2f);
         applyCondition(player, SepsisCompatHandler.SEPSIS, 0.2f);
-        applyCondition(player, HIVCompatHandler.HIV, 0.2f);
+        applyCondition(player, HIVCompatHandler.HIV_AIDS, 0.2f);
         applyCondition(player, PTSDCompatHandler.PTSD, 0.2f);
         applyCondition(player, ZombieVirusCompatHandler.ZOMBIE_VIRUS, 0.2f);
     }
