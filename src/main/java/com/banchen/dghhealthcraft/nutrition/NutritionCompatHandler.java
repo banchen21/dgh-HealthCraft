@@ -66,9 +66,16 @@ public class NutritionCompatHandler {
         }
 
         NutritionState tick(boolean sleeping, boolean jumping, Player player) {
-            // 基础水分消耗
+            // 基础营养消耗（按秒）
             double waterDecrease = sleeping ? Config.NUTRITION_SLEEP_WATER_DECREASE_RATE
                     : Config.NUTRITION_WATER_DECREASE_RATE;
+            double sugarDecrease = Config.NUTRITION_SUGAR_DECREASE_RATE;
+            double fatDecrease = Config.NUTRITION_FAT_DECREASE_RATE;
+            double proteinDecrease = Config.NUTRITION_PROTEIN_DECREASE_RATE;
+            double saltDecrease = Config.NUTRITION_SALT_DECREASE_RATE;
+            double vitaminDecrease = Config.NUTRITION_VITAMIN_DECREASE_RATE;
+            double fiberDecrease = Config.NUTRITION_FIBER_DECREASE_RATE;
+
             double w = this.water - waterDecrease / 100;
 
             // 高糖跳跃额外消耗水分
@@ -77,36 +84,29 @@ public class NutritionCompatHandler {
             }
             w = clamp(w);
 
-            double s = this.sugar;
-            double f = this.fat;
-            double p = this.protein;
-            double st = this.salt;
-            double v = this.vitamin;
-            double fi = this.fiber;
-
             // 活动消耗（移动、跳跃等）
             if (!sleeping && (player.zza != 0 || player.xxa != 0)) {
-                s -= 0.0005;
-                f -= 0.0003;
+                sugarDecrease += 0.0005;
+                fatDecrease += 0.0003;
                 if (player.isSprinting()) {
-                    s -= 0.001;
-                    f -= 0.0005;
+                    sugarDecrease += 0.001;
+                    fatDecrease += 0.0005;
                 }
             }
 
             // 缺水时，糖、脂、蛋白资源无法充分利用
             if (Config.WATER_DEFICIENCY_BLOCK_METABOLISM && w < Config.WATER_NORMAL_MIN / 100) {
-                s -= 0.001;
-                f -= 0.001;
-                p -= 0.001;
+                sugarDecrease += 0.001;
+                fatDecrease += 0.001;
+                proteinDecrease += 0.001;
             }
 
-            s = clamp(s);
-            f = clamp(f);
-            p = clamp(p);
-            st = clamp(st);
-            v = clamp(v);
-            fi = clamp(fi);
+            double s = clamp(this.sugar - sugarDecrease / 100);
+            double f = clamp(this.fat - fatDecrease / 100);
+            double p = clamp(this.protein - proteinDecrease / 100);
+            double st = clamp(this.salt - saltDecrease / 100);
+            double v = clamp(this.vitamin - vitaminDecrease / 100);
+            double fi = clamp(this.fiber - fiberDecrease / 100);
 
             return new NutritionState(w, s, f, p, st, v, fi);
         }
@@ -281,8 +281,13 @@ public class NutritionCompatHandler {
 
         NutritionState old = state(player);
         boolean sleeping = player.isSleeping();
-        NutritionState updated = old.tick(sleeping, false, player);
-        setState(player, updated);
+        NutritionState updated = old;
+
+        // 基础营养消耗按每秒触发一次（20 tick）
+        if (player.tickCount % 20 == 0) {
+            updated = old.tick(sleeping, false, player);
+            setState(player, updated);
+        }
 
         // 水分配置效果
         double water = updated.water * 100;

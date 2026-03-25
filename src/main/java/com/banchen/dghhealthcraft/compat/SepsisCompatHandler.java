@@ -357,8 +357,6 @@ public class SepsisCompatHandler {
      * 检查是否为污染药针
      */
     private static boolean isContaminatedSyringe(ItemStack stack, net.minecraft.world.level.Level level) {
-        if (!Config.SYRINGE_CONTAMINATION_ENABLED)
-            return false;
         if (stack.isEmpty())
             return false;
 

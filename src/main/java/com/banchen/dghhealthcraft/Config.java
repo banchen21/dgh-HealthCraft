@@ -98,10 +98,6 @@ public class Config {
         public static float SEPSIS_ACTION_EXTRA_SUGAR_COST = 0.5f;
         // 行动时额外消耗油脂
         public static float SEPSIS_ACTION_EXTRA_FAT_COST = 0.3f;
-        // 注射器污染是否启用
-        public static boolean SYRINGE_CONTAMINATION_ENABLED = true;
-        // 注射器污染持续时间（秒）
-        public static int SYRINGE_CONTAMINATION_DURATION_SECONDS = 120;
 
         // ==================== 尸毒感染相关配置 ====================
         // 亡灵生物攻击感染尸毒的概率
@@ -131,9 +127,21 @@ public class Config {
 
         // ==================== 营养消耗配置 ====================
         // 正常情况水分消耗速率（每秒）
-        public static float NUTRITION_WATER_DECREASE_RATE = 0.1f;
+        public static float NUTRITION_WATER_DECREASE_RATE = 0.001f;
         // 睡眠时水分消耗速率（每秒）
-        public static float NUTRITION_SLEEP_WATER_DECREASE_RATE = 0.05f;
+        public static float NUTRITION_SLEEP_WATER_DECREASE_RATE = 0.005f;
+        // 正常情况下糖分消耗速率（每秒）
+        public static float NUTRITION_SUGAR_DECREASE_RATE = 0.0005f;
+        // 正常情况下脂肪消耗速率（每秒）
+        public static float NUTRITION_FAT_DECREASE_RATE = 0.0003f;
+        // 正常情况下蛋白质消耗速率（每秒）
+        public static float NUTRITION_PROTEIN_DECREASE_RATE = 0.0002f;
+        // 正常情况下盐分消耗速率（每秒）
+        public static float NUTRITION_SALT_DECREASE_RATE = 0.0001f;
+        // 正常情况下维生素消耗速率（每秒）
+        public static float NUTRITION_VITAMIN_DECREASE_RATE = 0.0001f;
+        // 正常情况下膳食纤维消耗速率（每秒）
+        public static float NUTRITION_FIBER_DECREASE_RATE = 0.0001f;
         // 缺水是否阻止新陈代谢
         public static boolean WATER_DEFICIENCY_BLOCK_METABOLISM = true;
         // 缺水中毒间隔（刻）
@@ -141,7 +149,7 @@ public class Config {
         // 缺水中毒伤害
         public static float WATER_DEFICIENCY_POISON_DAMAGE = 1.0f;
         // 睡眠水分消耗（每秒）
-        public static float WATER_SLEEP_DECREASE_RATE = 0.02f;
+        public static float WATER_SLEEP_DECREASE_RATE = 0.002f;
 
         // ==================== 糖类配置 ====================
         public static float SACCHARIDES_NORMAL_MIN = 20.0f;
@@ -247,8 +255,6 @@ public class Config {
                 SEPSIS_POISON_CHANCE = COMMON.sepsisPoisonChance.get().floatValue();
                 SEPSIS_ACTION_EXTRA_SUGAR_COST = COMMON.sepsisActionExtraSugarCost.get().floatValue();
                 SEPSIS_ACTION_EXTRA_FAT_COST = COMMON.sepsisActionExtraFatCost.get().floatValue();
-                SYRINGE_CONTAMINATION_ENABLED = COMMON.syringeContaminationEnabled.get();
-                SYRINGE_CONTAMINATION_DURATION_SECONDS = COMMON.syringeContaminationDurationSeconds.get();
 
                 // 尸毒感染相关配置
                 CORPSE_POISON_UNDEAD_ATTACK_CHANCE = COMMON.corpsePoisonUndeadAttackChance.get().floatValue();
@@ -278,6 +284,12 @@ public class Config {
                 // 营养消耗配置
                 NUTRITION_WATER_DECREASE_RATE = COMMON.nutritionWaterDecreaseRate.get().floatValue();
                 NUTRITION_SLEEP_WATER_DECREASE_RATE = COMMON.nutritionSleepWaterDecreaseRate.get().floatValue();
+                NUTRITION_SUGAR_DECREASE_RATE = COMMON.nutritionSugarDecreaseRate.get().floatValue();
+                NUTRITION_FAT_DECREASE_RATE = COMMON.nutritionFatDecreaseRate.get().floatValue();
+                NUTRITION_PROTEIN_DECREASE_RATE = COMMON.nutritionProteinDecreaseRate.get().floatValue();
+                NUTRITION_SALT_DECREASE_RATE = COMMON.nutritionSaltDecreaseRate.get().floatValue();
+                NUTRITION_VITAMIN_DECREASE_RATE = COMMON.nutritionVitaminDecreaseRate.get().floatValue();
+                NUTRITION_FIBER_DECREASE_RATE = COMMON.nutritionFiberDecreaseRate.get().floatValue();
                 WATER_DEFICIENCY_BLOCK_METABOLISM = COMMON.waterDeficiencyBlockMetabolism.get();
                 WATER_DEFICIENCY_POISON_INTERVAL_TICKS = COMMON.waterDeficiencyPoisonIntervalTicks.get();
                 WATER_DEFICIENCY_POISON_DAMAGE = COMMON.waterDeficiencyPoisonDamage.get().floatValue();
@@ -381,8 +393,6 @@ public class Config {
                 public final ForgeConfigSpec.DoubleValue sepsisPoisonChance;
                 public final ForgeConfigSpec.DoubleValue sepsisActionExtraSugarCost;
                 public final ForgeConfigSpec.DoubleValue sepsisActionExtraFatCost;
-                public final ForgeConfigSpec.BooleanValue syringeContaminationEnabled;
-                public final ForgeConfigSpec.IntValue syringeContaminationDurationSeconds;
 
                 // 尸毒感染相关配置
                 public final ForgeConfigSpec.DoubleValue corpsePoisonUndeadAttackChance;
@@ -411,6 +421,12 @@ public class Config {
                 // 营养消耗配置
                 public final ForgeConfigSpec.DoubleValue nutritionWaterDecreaseRate;
                 public final ForgeConfigSpec.DoubleValue nutritionSleepWaterDecreaseRate;
+                public final ForgeConfigSpec.DoubleValue nutritionSugarDecreaseRate;
+                public final ForgeConfigSpec.DoubleValue nutritionFatDecreaseRate;
+                public final ForgeConfigSpec.DoubleValue nutritionProteinDecreaseRate;
+                public final ForgeConfigSpec.DoubleValue nutritionSaltDecreaseRate;
+                public final ForgeConfigSpec.DoubleValue nutritionVitaminDecreaseRate;
+                public final ForgeConfigSpec.DoubleValue nutritionFiberDecreaseRate;
                 public final ForgeConfigSpec.BooleanValue waterDeficiencyBlockMetabolism;
                 public final ForgeConfigSpec.IntValue waterDeficiencyPoisonIntervalTicks;
                 public final ForgeConfigSpec.DoubleValue waterDeficiencyPoisonDamage;
@@ -651,14 +667,6 @@ public class Config {
                                         .comment("行动时额外消耗的油脂")
                                         .defineInRange("actionExtraFatCost", 0.3, 0.0, 5.0);
 
-                        syringeContaminationEnabled = builder
-                                        .comment("是否启用注射器污染机制")
-                                        .define("syringeContaminationEnabled", true);
-
-                        syringeContaminationDurationSeconds = builder
-                                        .comment("注射器污染持续时间（秒）")
-                                        .defineInRange("syringeContaminationDurationSeconds", 120, 10, 3600);
-
                         builder.pop();
 
                         // ==================== 尸毒感染配置 ====================
@@ -767,6 +775,30 @@ public class Config {
                         nutritionSleepWaterDecreaseRate = builder
                                         .comment("睡眠时水分消耗速率（每秒）")
                                         .defineInRange("sleepWaterDecreaseRate", 0.05, 0.0, 1.0);
+
+                        nutritionSugarDecreaseRate = builder
+                                        .comment("正常情况下糖分消耗速率（每秒）")
+                                        .defineInRange("sugarDecreaseRate", 0.0005, 0.0, 1.0);
+
+                        nutritionFatDecreaseRate = builder
+                                        .comment("正常情况下脂肪消耗速率（每秒）")
+                                        .defineInRange("fatDecreaseRate", 0.0003, 0.0, 1.0);
+
+                        nutritionProteinDecreaseRate = builder
+                                        .comment("正常情况下蛋白质消耗速率（每秒）")
+                                        .defineInRange("proteinDecreaseRate", 0.0002, 0.0, 1.0);
+
+                        nutritionSaltDecreaseRate = builder
+                                        .comment("正常情况下盐分消耗速率（每秒）")
+                                        .defineInRange("saltDecreaseRate", 0.0001, 0.0, 1.0);
+
+                        nutritionVitaminDecreaseRate = builder
+                                        .comment("正常情况下维生素消耗速率（每秒）")
+                                        .defineInRange("vitaminDecreaseRate", 0.0001, 0.0, 1.0);
+
+                        nutritionFiberDecreaseRate = builder
+                                        .comment("正常情况下膳食纤维消耗速率（每秒）")
+                                        .defineInRange("fiberDecreaseRate", 0.0001, 0.0, 1.0);
 
                         waterDeficiencyBlockMetabolism = builder
                                         .comment("缺水时是否阻止新陈代谢")
