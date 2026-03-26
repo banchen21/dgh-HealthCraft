@@ -25,24 +25,6 @@ import net.minecraft.world.level.Level;
  */
 public class CapsuleItem extends Item {
 
-    private Integer getCooldownForCapsule(ItemStack stack) {
-        if (stack == null || stack.isEmpty()) {
-            return null;
-        }
-
-        Item item = stack.getItem();
-
-        if (item == DghHModItems.LAMIVUDINE_CAPSULE.get()) {
-            return (int) (Config.IBUPROFEN_COOLDOWN_SECONDS * 20);
-        } else if (item == DghHModItems.DEXTROMETHORPHAN_CAPSULE.get()) {
-            return (int) (Config.DEXTROMETHORPHAN_COOLDOWN_SECONDS * 20);
-        } else if (item == DghHModItems.IBUPROFEN_CAPSULE.get()) {
-            return (int) (Config.IBUPROFEN_COOLDOWN_SECONDS * 20);
-        }
-
-        return null;
-    }
-
     public CapsuleItem(Properties properties) {
         super(properties);
     }
@@ -64,6 +46,24 @@ public class CapsuleItem extends Item {
         }
 
         return InteractionResultHolder.pass(stack);
+    }
+
+    private Integer getCooldownForCapsule(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) {
+            return null;
+        }
+
+        Item item = stack.getItem();
+
+        if (item == DghHModItems.LAMIVUDINE_CAPSULE.get()) {
+            return (int) (Config.LAMIVUDINE_COOLDOWN_SECONDS * 20);
+        } else if (item == DghHModItems.DEXTROMETHORPHAN_CAPSULE.get()) {
+            return (int) (Config.DEXTROMETHORPHAN_COOLDOWN_SECONDS * 20);
+        } else if (item == DghHModItems.IBUPROFEN_CAPSULE.get()) {
+            return (int) (Config.IBUPROFEN_COOLDOWN_SECONDS * 20);
+        }
+
+        return null;
     }
 
     /**
@@ -124,8 +124,9 @@ public class CapsuleItem extends Item {
      * @return 冷却时间（秒）
      */
     public static int getCooldownSeconds(Item capsuleType) {
-        if (capsuleType == DghHModItems.LAMIVUDINE_CAPSULE.get() ||
-                capsuleType == DghHModItems.IBUPROFEN_CAPSULE.get()) {
+        if (capsuleType == DghHModItems.LAMIVUDINE_CAPSULE.get()) {
+            return Config.LAMIVUDINE_COOLDOWN_SECONDS;
+        } else if (capsuleType == DghHModItems.IBUPROFEN_CAPSULE.get()) {
             return Config.IBUPROFEN_COOLDOWN_SECONDS;
         } else if (capsuleType == DghHModItems.DEXTROMETHORPHAN_CAPSULE.get()) {
             return Config.DEXTROMETHORPHAN_COOLDOWN_SECONDS;

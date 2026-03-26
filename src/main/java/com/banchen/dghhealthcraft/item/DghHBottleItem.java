@@ -98,12 +98,14 @@ public class DghHBottleItem extends Item {
      * 获取瓶子对应的冷却时间（刻）
      */
     private int getCooldownTicks(Item bottleType) {
-        if (bottleType == DghHModItems.LAMIVUDINE_BOTTLE.get() ||
-                bottleType == DghHModItems.DEXTROMETHORPHAN_BOTTLE.get() ||
-                bottleType == DghHModItems.IBUPROFEN_BOTTLE.get()) {
-            return Config.CAPSULE_EFFECT_DELAY_SECONDS * 20;
+        if (bottleType == DghHModItems.LAMIVUDINE_BOTTLE.get()) {
+            return Config.LAMIVUDINE_COOLDOWN_SECONDS * 20;
+        } else if (bottleType == DghHModItems.DEXTROMETHORPHAN_BOTTLE.get()) {
+            return Config.DEXTROMETHORPHAN_COOLDOWN_SECONDS * 20;
+        } else if (bottleType == DghHModItems.IBUPROFEN_BOTTLE.get()) {
+            return Config.IBUPROFEN_COOLDOWN_SECONDS * 20;
         }
-        return Config.CAPSULE_EFFECT_DELAY_SECONDS * 20;
+        return 0;
     }
 
     /**

@@ -64,6 +64,8 @@ public class Config {
         public static boolean IBUPROFEN_TEMPORARY_RELIEF = true;
 
         // ==================== 胶囊冷却时间配置 ====================
+        // 拉米夫定冷却时间（秒）
+        public static int LAMIVUDINE_COOLDOWN_SECONDS = 5;
         // 布洛芬冷却时间（秒）
         public static int IBUPROFEN_COOLDOWN_SECONDS = 5;
         // 右美沙芬冷却时间（秒）
@@ -234,6 +236,7 @@ public class Config {
                 LOW_PROTEIN_AIDS_INFECTION_CHANCE = COMMON.lowProteinAidsInfectionChance.get().floatValue();
 
                 // 胶囊冷却时间配置
+                LAMIVUDINE_COOLDOWN_SECONDS = COMMON.lamivudineCooldownSeconds.get();
                 IBUPROFEN_COOLDOWN_SECONDS = COMMON.ibuprofenCooldownSeconds.get();
                 DEXTROMETHORPHAN_COOLDOWN_SECONDS = COMMON.dextromethorphanCooldownSeconds.get();
 
@@ -373,6 +376,7 @@ public class Config {
                 public final ForgeConfigSpec.DoubleValue lowProteinAidsInfectionChance;
 
                 // 胶囊冷却时间配置
+                public final ForgeConfigSpec.IntValue lamivudineCooldownSeconds;
                 public final ForgeConfigSpec.IntValue ibuprofenCooldownSeconds;
                 public final ForgeConfigSpec.IntValue dextromethorphanCooldownSeconds;
 
@@ -593,6 +597,10 @@ public class Config {
 
                         builder.comment("胶囊药物设置")
                                         .push("capsules");
+
+                        lamivudineCooldownSeconds = builder
+                                        .comment("拉米夫定胶囊使用后的冷却时间（秒）")
+                                        .defineInRange("lamivudineCooldownSeconds", 60, 1, 3600);
 
                         ibuprofenCooldownSeconds = builder
                                         .comment("布洛芬胶囊使用后的冷却时间（秒）")

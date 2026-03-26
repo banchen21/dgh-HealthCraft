@@ -5,11 +5,11 @@ import com.banchen.dghhealthcraft.DGH_HealthcraftMod;
 import com.banchen.dghhealthcraft.nutrition.NutritionCompatHandler;
 import com.banchen.dghhealthcraft.registry.DghHModItems;
 import com.lastimp.dgh.common.capability.HealthCapability;
+import com.lastimp.dgh.common.entry.register.ModItems;
 import com.lastimp.dgh.common.capability.bodyPart.ConditionAccessor;
 import com.lastimp.dgh.common.capability.bodyPart.base.AbstractBody;
 import com.lastimp.dgh.common.capability.bodyPart.base.BodyCondition;
 import com.lastimp.dgh.common.capability.bodyPart.bodies.Blood;
-import com.lastimp.dgh.common.entry.register.ModItems;
 import com.lastimp.dgh.common.enums.BodyComponents;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -138,22 +138,21 @@ public class SepsisCompatHandler {
 
         ItemStack used = player.getItemInHand(event.getHand());
 
-        // 使用广谱抗生素治疗脓毒症
-        if (!used.isEmpty() && used.getItem() == ModItems.ANTIBIOTICS.get()) {
-            // 消耗抗生素
-            if (!player.isCreative()) {
-                used.shrink(1);
-            }
-            return;
-        }
-
-        // 检查是否使用污染药针
         if (isContaminatedSyringe(used, player.level())) {
             // 感染脓毒症
             if (RANDOM.nextFloat() < Config.SEPSIS_CONTAMINATED_SYRINGE_CHANCE) {
                 applyInfection(player, SEPSIS_MILD, 0.03f);
             }
+        } else if (isAntibiotics(used)) {
+            // 使用广谱抗生素治疗脓毒症
+            if (cureSepsis(player)) {
+                if (!player.isCreative()) {
+                    used.shrink(1);
+                }
+                return;
+            }
         }
+
     }
 
     /**
@@ -371,6 +370,10 @@ public class SepsisCompatHandler {
         return false;
     }
 
+    private static boolean isAntibiotics(ItemStack stack) {
+        return !stack.isEmpty() && stack.getItem() == ModItems.ANTIBIOTICS.get();
+    }
+
     /**
      * 行动时额外消耗营养
      */
@@ -505,14 +508,8 @@ public class SepsisCompatHandler {
         if (RANDOM.nextFloat() < cureChance) {
             fullyCureSepsis(player);
             return true;
-        } else {
-            // 治疗失败，减少部分脓毒症值
-            ResourceLocation currentCondition = getCurrentCondition(player);
-            if (currentCondition != null) {
-                applyInfection(player, currentCondition, -0.3f);
-            }
-            return false;
         }
+        return false;
     }
 
     /**
