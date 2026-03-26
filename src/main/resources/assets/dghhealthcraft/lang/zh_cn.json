@@ -142,5 +142,12 @@
   "hiv.stage.active": "发病期",
   "hiv.stage.aids": "艾滋病期",
   "hiv.stage.none": "未感染",
-  "hiv.stage.unknown": "未知"
+  "hiv.stage.unknown": "未知",
+  "tooltip.dghhealthcraft.nutrition.water": "水分 +{0}",
+  "tooltip.dghhealthcraft.nutrition.sugar": "糖分 +{0}",
+  "tooltip.dghhealthcraft.nutrition.fat": "脂肪 +{0}",
+  "tooltip.dghhealthcraft.nutrition.protein": "蛋白质 +{0}",
+  "tooltip.dghhealthcraft.nutrition.salt": "无机盐 +{0}",
+  "tooltip.dghhealthcraft.nutrition.vitamin": "维生素 +{0}",
+  "tooltip.dghhealthcraft.nutrition.fiber": "膳食纤维 +{0}"
 }
