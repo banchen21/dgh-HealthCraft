@@ -3,7 +3,6 @@ package com.banchen.dghhealthcraft.item;
 import com.banchen.dghhealthcraft.Config;
 import com.banchen.dghhealthcraft.compat.HIVCompatHandler;
 import com.banchen.dghhealthcraft.compat.URTICompatHandler;
-import com.banchen.dghhealthcraft.compat.PTSDCompatHandler;
 import com.banchen.dghhealthcraft.registry.DghHModItems;
 
 import net.minecraft.ChatFormatting;
