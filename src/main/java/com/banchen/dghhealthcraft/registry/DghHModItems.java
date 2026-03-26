@@ -17,15 +17,19 @@ public class DghHModItems {
     public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS,
             DGH_HealthcraftMod.MODID);
 
-    // 拉米夫定胶囊，叠堆上限16
+    // 拉米夫定胶囊，叠堆上限1
     public static final RegistryObject<Item> LAMIVUDINE_CAPSULE = ITEMS.register("lamivudine_capsule",
-            () -> new CapsuleItem(new Item.Properties().stacksTo(16)));
-    // 右美沙芬胶囊，叠堆上限16
+            () -> new CapsuleItem(new Item.Properties().stacksTo(1)));
+    // 右美沙芬胶囊，叠堆上限1
     public static final RegistryObject<Item> DEXTROMETHORPHAN_CAPSULE = ITEMS.register("dextromethorphan_capsule",
-            () -> new CapsuleItem(new Item.Properties().stacksTo(16)));
-    // 布洛芬胶囊，叠堆上限16
+            () -> new CapsuleItem(new Item.Properties().stacksTo(1)));
+    // 布洛芬胶囊，叠堆上限1
     public static final RegistryObject<Item> IBUPROFEN_CAPSULE = ITEMS.register("ibuprofen_capsule",
-            () -> new CapsuleItem(new Item.Properties().stacksTo(16)));
+            () -> new CapsuleItem(new Item.Properties().stacksTo(1)));
+
+    // 容器
+    public static final RegistryObject<Item> CONTAINER = ITEMS.register("container",
+            () -> new Item(new Item.Properties().stacksTo(64)));
 
     // 胶囊瓶（含8次用量）
     public static final RegistryObject<Item> LAMIVUDINE_BOTTLE = ITEMS.register("lamivudine_bottle",

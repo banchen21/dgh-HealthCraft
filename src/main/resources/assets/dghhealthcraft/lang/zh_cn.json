@@ -24,6 +24,7 @@
 
   "item.dghhealthcraft.lamivudine_capsule": "拉米夫定 胶囊",
   "item.dghhealthcraft.lamivudine_bottle": "拉米夫定 药水",
+  "item.dghhealthcraft.container": "容器",
   "item.dghhealthcraft.lamivudine_capsule.tooltip": "有 %d%% 的概率治疗艾滋病",
   "item.dghhealthcraft.lamivudine_capsule.cure_chance": "治愈概率：%s%%",
   "item.dghhealthcraft.lamivudine_bottle.remaining_uses": "剩余使用次数: %s",

@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "CCC",
+    "CBC",
+    "CCC"
+  ],
+  "key": {
+    "C": { "item": "dghhealthcraft:dextromethorphan_capsule" },
+    "B": { "item": "dghhealthcraft:container" }
+  },
+  "result": {
+    "item": "dghhealthcraft:dextromethorphan_bottle",
+    "count": 1
+  }
+}

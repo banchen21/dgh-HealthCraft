@@ -21,6 +21,7 @@ public class DghHModCreativeTabs {
                         output.accept(DghHModItems.LAMIVUDINE_CAPSULE.get());
                         output.accept(DghHModItems.DEXTROMETHORPHAN_CAPSULE.get());
                         output.accept(DghHModItems.IBUPROFEN_CAPSULE.get());
+                        output.accept(DghHModItems.CONTAINER.get());
                         output.accept(DghHModItems.LAMIVUDINE_BOTTLE.get());
                         output.accept(DghHModItems.DEXTROMETHORPHAN_BOTTLE.get());
                         output.accept(DghHModItems.IBUPROFEN_BOTTLE.get());
