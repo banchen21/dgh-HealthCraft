@@ -23,7 +23,7 @@
   "dghhealthcraft:zombification": "尸变",
 
   "item.dghhealthcraft.lamivudine_capsule": "拉米夫定 胶囊",
-  "item.dghhealthcraft.lamivudine_bottle": "拉米夫定 药水",
+  "item.dghhealthcraft.lamivudine_bottle": "拉米夫定 药瓶",
   "item.dghhealthcraft.container": "容器",
   "item.dghhealthcraft.lamivudine_capsule.tooltip.treat": "治疗：",
   "item.dghhealthcraft.lamivudine_capsule.tooltip.aids": "艾滋病（%d%%）",
@@ -36,7 +36,7 @@
   "item.dghhealthcraft.lamivudine_bottle.returns_bottle": "使用后返还空玻璃瓶",
 
   "item.dghhealthcraft.dextromethorphan_capsule": "右美沙芬 胶囊",
-  "item.dghhealthcraft.dextromethorphan_bottle": "右美沙芬 药水",
+  "item.dghhealthcraft.dextromethorphan_bottle": "右美沙芬 药瓶",
   "item.dghhealthcraft.dextromethorphan_capsule.tooltip.treat": "治疗：",
   "item.dghhealthcraft.dextromethorphan_capsule.tooltip.mild": "上呼吸道感染（轻型 %s%%）",
   "item.dghhealthcraft.dextromethorphan_capsule.tooltip.stabilize": "稳定：",
@@ -51,7 +51,7 @@
   "item.dghhealthcraft.dextromethorphan_bottle.returns_bottle": "使用后返还空玻璃瓶",
 
   "item.dghhealthcraft.ibuprofen_capsule": "布洛芬 胶囊",
-  "item.dghhealthcraft.ibuprofen_bottle": "布洛芬 药水",
+  "item.dghhealthcraft.ibuprofen_bottle": "布洛芬 药瓶",
   "item.dghhealthcraft.ibuprofen_capsule.tooltip.stabilize": "稳定：",
   "item.dghhealthcraft.ibuprofen_capsule.tooltip.urti": "上呼吸道感染（中型、重型）",
   "item.dghhealthcraft.ibuprofen_capsule.duration": "缓解持续时间: %s 秒",
