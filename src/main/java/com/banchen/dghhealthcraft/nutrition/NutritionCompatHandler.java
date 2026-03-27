@@ -37,6 +37,7 @@ public class NutritionCompatHandler {
     private record NutritionState(double water, double sugar, double fat, double protein, double salt, double vitamin,
             double fiber) {
         static NutritionState create() {
+            // 初始营养设置为 50%，避免“无病营养正常却长期饥饿”的门槛抖动问题
             return new NutritionState(0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5);
         }
 

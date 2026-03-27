@@ -951,7 +951,7 @@ public class Config {
                                         .push("water");
                         waterNormalMin = builder
                                         .comment("水分正常值下限")
-                                        .defineInRange("normalMin", 50.0, 0.0, 100.0);
+                                        .defineInRange("normalMin", 30.0, 0.0, 100.0);
                         vitaminNormalMax = builder
                                         .comment("维生素正常值上限")
                                         .defineInRange("normalMax", 80.0, 0.0, 100.0);

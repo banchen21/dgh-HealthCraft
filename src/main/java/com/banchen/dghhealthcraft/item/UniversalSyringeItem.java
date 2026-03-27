@@ -3,7 +3,6 @@ package com.banchen.dghhealthcraft.item;
 import com.banchen.dghhealthcraft.Config;
 import com.banchen.dghhealthcraft.compat.HIVCompatHandler;
 import com.banchen.dghhealthcraft.compat.SepsisCompatHandler;
-import com.banchen.dghhealthcraft.compat.ZombieVirusCompatHandler;
 import com.banchen.dghhealthcraft.registry.DghHModItems;
 
 import net.minecraft.ChatFormatting;
@@ -75,14 +74,10 @@ public class UniversalSyringeItem extends Item {
 
     /**
      * 使用受污染药针的效果
-     * 可能感染 HIV、脓毒症或尸毒
+     * 可能感染 HIV、脓毒症
      */
     private void applyContaminatedEffect(Player player) {
 
-        // 检查是否被阻断剂保护
-        if (ZombieVirusCompatHandler.isBlockerActive(player)) {
-            return;
-        }
 
         // 感染 HIV
         if (!HIVCompatHandler.isHIVActive(player) &&
@@ -94,12 +89,6 @@ public class UniversalSyringeItem extends Item {
         if (!SepsisCompatHandler.isSepsisActive(player) &&
                 RANDOM.nextFloat() < Config.SEPSIS_CONTAMINATED_SYRINGE_CHANCE) {
             SepsisCompatHandler.applyInfection(player, SepsisCompatHandler.SEPSIS_MILD, 0.03f);
-        }
-
-        // 感染尸毒
-        if (!ZombieVirusCompatHandler.isZombieVirusActive(player) &&
-                RANDOM.nextFloat() < Config.CORPSE_POISON_UNDEAD_ATTACK_CHANCE) {
-            ZombieVirusCompatHandler.applyInfection(player, ZombieVirusCompatHandler.ZOMBIE_VIRUS_EARLY, 0.03f);
         }
 
     }
