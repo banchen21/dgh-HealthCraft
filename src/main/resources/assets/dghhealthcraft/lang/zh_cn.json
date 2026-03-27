@@ -117,7 +117,7 @@
   "item.dghhealthcraft.contaminated_syringe.blocker_protection": "阻断剂可提供保护",
 
   "item.dghhealthcraft.blocker_injection": "阻断剂 注射液",
-  "item.dghhealthcraft.blocker_injection.tooltip.stabilize": "稳定：",
+  "item.dghhealthcraft.blocker_injection.tooltip.stabilize": "阻止：",
   "item.dghhealthcraft.blocker_injection.tooltip.zombie_virus": "尸毒感染",
   "item.dghhealthcraft.blocker_injection.tooltip.zombification": "尸变状态",
   "item.dghhealthcraft.blocker_injection.tooltip.require": "需要：",
