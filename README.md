@@ -4,6 +4,14 @@
 
 本文档用于约束玩法目标、系统边界与实现方向，作为后续开发与平衡调优基线。
 
+## 依赖Mod
+- **DGH**([dgh-1.3.3.2](https://github.com/banchen21/dontgethurt))
+
+## 定制者
+- **韩漠云**（[0HanMoyun0](https://github.com/0HanMoyun0)）  
+  负责本模组整体设计、玩法闭环测试。
+
+
 ## 1. 设计目标
 
 - 提供比原版更高压力、更可管理的生存健康系统。
@@ -172,6 +180,7 @@
 ### 11.3 常用构建与运行命令
 
 - 构建项目：
+  - gradle --refresh-dependencies
   - gradle build
 - 启动客户端开发环境：
   - gradle runClient
