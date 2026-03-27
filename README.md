@@ -1,4 +1,4 @@
-# DGH Healthcraft
+# DGH Healthcraft(无伤大雅：医疗工艺)
 
 一个围绕 疾病-营养-用药 闭环设计的生存医疗扩展模组。
 
