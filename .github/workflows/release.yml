@@ -1,13 +1,16 @@
-name: Build and Release
+name: Build Verification
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches:
+      - main
+      - dev
+      - feat/**
+  pull_request:
   workflow_dispatch:
 
 jobs:
-  build-and-release:
+  build-verify:
     runs-on: windows-latest
 
     steps:
@@ -28,42 +31,6 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      - name: Read mod version
-        id: mod_version
-        run: |
-          echo "MOD_VERSION=$(grep '^mod_version=' dgh-HealthCraft/gradle.properties | cut -d'=' -f2)" >> $GITHUB_ENV
-          echo "RELEASE_VERSION=${GITHUB_REF_NAME:-$MOD_VERSION}" >> $GITHUB_ENV
-
       - name: Gradle build
         working-directory: dgh-HealthCraft
         run: .\gradlew --no-daemon clean build
-
-      - name: Collect artifact
-        working-directory: dgh-HealthCraft
-        run: |
-          set -e
-          artifactPath=$(powershell -NoLogo -NoProfile -Command "Get-ChildItem -Path build/libs -Filter '*.jar' | Select-Object -First 1 -ExpandProperty FullName")
-          echo "artifact_path=$artifactPath" >> $GITHUB_ENV
-          echo "artifact_name=$(powershell -NoLogo -NoProfile -Command \"Split-Path -Path '$artifactPath' -Leaf\")" >> $GITHUB_ENV
-
-      - name: Create GitHub Release
-        id: create_release
-        uses: actions/create-release@v1
-        with:
-          tag_name: ${{ github.ref_name != '' && github.ref_name || env.RELEASE_VERSION }}
-          release_name: ${{ github.ref_name != '' && github.ref_name || env.RELEASE_VERSION }}
-          body: 'Automated build artifact from gradle build.'
-          draft: false
-          prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload mod artifact to release
-        uses: actions/upload-release-asset@v1
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${{ env.artifact_path }}
-          asset_name: ${{ env.artifact_name }}
-          asset_content_type: application/java-archive
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
