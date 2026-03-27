@@ -7,6 +7,8 @@ import com.banchen.dghhealthcraft.registry.DghHModItems;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
+import net.minecraft.network.chat.TextColor;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
@@ -122,14 +124,16 @@ public class DghHBottleItem extends Item {
 
         Item item = stack.getItem();
         int remainingUses = stack.getMaxDamage() - stack.getDamageValue();
+        Style titleStyle = Style.EMPTY.withColor(TextColor.fromRgb(0xFCFCFC));
+        Style contentStyle = Style.EMPTY.withColor(TextColor.fromRgb(0x5454FC));
 
         // ==================== 拉米夫定瓶 ====================
         if (item == DghHModItems.LAMIVUDINE_BOTTLE.get()) {
             int cureChancePercent = (int) (Config.LAMIVUDINE_AIDS_CURE_CHANCE * 100);
-            tooltip.add(Component.translatable("item.dghhealthcraft.lamivudine_bottle.cure_chance", cureChancePercent)
-                    .withStyle(ChatFormatting.GREEN));
-            tooltip.add(Component.translatable("item.dghhealthcraft.lamivudine_bottle.tooltip.detail")
-                    .withStyle(ChatFormatting.GRAY));
+            tooltip.add(Component.translatable("item.dghhealthcraft.lamivudine_bottle.tooltip.treat")
+                .withStyle(titleStyle));
+            tooltip.add(Component.translatable("item.dghhealthcraft.lamivudine_bottle.tooltip.aids", cureChancePercent)
+                .withStyle(contentStyle));
             tooltip.add(Component.translatable("item.dghhealthcraft.lamivudine_bottle.returns_bottle")
                     .withStyle(ChatFormatting.DARK_GREEN));
             tooltip.add(Component.translatable("item.dghhealthcraft.lamivudine_bottle.remaining_uses", remainingUses)
@@ -140,9 +144,16 @@ public class DghHBottleItem extends Item {
         else if (item == DghHModItems.DEXTROMETHORPHAN_BOTTLE.get()) {
             int mildCurePercent = (int) (Config.DEXTROMETHORPHAN_MILD_CURE_CHANCE * 100);
             int moderateToMildPercent = (int) (Config.DEXTROMETHORPHAN_MODERATE_TO_MILD_CHANCE * 100);
-            tooltip.add(Component.translatable("item.dghhealthcraft.dextromethorphan_bottle.effect",
-                    mildCurePercent, moderateToMildPercent)
-                    .withStyle(ChatFormatting.AQUA));
+            tooltip.add(Component.translatable("item.dghhealthcraft.dextromethorphan_bottle.tooltip.treat")
+                .withStyle(titleStyle));
+            tooltip.add(Component.translatable("item.dghhealthcraft.dextromethorphan_bottle.tooltip.mild",
+                mildCurePercent)
+                .withStyle(contentStyle));
+            tooltip.add(Component.translatable("item.dghhealthcraft.dextromethorphan_bottle.tooltip.stabilize")
+                .withStyle(titleStyle));
+            tooltip.add(Component.translatable("item.dghhealthcraft.dextromethorphan_bottle.tooltip.moderate",
+                moderateToMildPercent)
+                .withStyle(contentStyle));
             tooltip.add(Component.translatable("item.dghhealthcraft.lamivudine_bottle.returns_bottle")
                     .withStyle(ChatFormatting.DARK_GREEN));
             tooltip.add(Component.translatable("item.dghhealthcraft.lamivudine_bottle.remaining_uses", remainingUses)
@@ -151,11 +162,10 @@ public class DghHBottleItem extends Item {
 
         // ==================== 布洛芬瓶 ====================
         else if (item == DghHModItems.IBUPROFEN_BOTTLE.get()) {
-            tooltip.add(Component.translatable("item.dghhealthcraft.ibuprofen_bottle.tooltip")
-                    .withStyle(ChatFormatting.GOLD));
-            int durationSeconds = Config.PTSD_EFFECT_DURATION_TICKS / 20;
-            tooltip.add(Component.translatable("item.dghhealthcraft.ibuprofen_bottle.duration", durationSeconds)
-                    .withStyle(ChatFormatting.GRAY));
+            tooltip.add(Component.translatable("item.dghhealthcraft.ibuprofen_bottle.tooltip.stabilize")
+                .withStyle(ChatFormatting.WHITE));
+            tooltip.add(Component.translatable("item.dghhealthcraft.ibuprofen_bottle.tooltip.urti")
+                .withStyle(ChatFormatting.AQUA));
             tooltip.add(Component.translatable("item.dghhealthcraft.lamivudine_bottle.returns_bottle")
                     .withStyle(ChatFormatting.DARK_GREEN));
             tooltip.add(Component.translatable("item.dghhealthcraft.lamivudine_bottle.remaining_uses", remainingUses)

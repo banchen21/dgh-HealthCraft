@@ -57,8 +57,16 @@ public class InjectionItem extends Item {
                 int remainingUses = stack.getMaxDamage() - stack.getDamageValue();
                 // ==================== 阻断剂注射液 ====================
                 if (item == DghHModItems.BLOCKER_INJECTION.get()) {
-                        tooltip.add(Component.translatable("item.dghhealthcraft.ribavirin_injection.tooltip.usage")
-                                        .withStyle(ChatFormatting.GREEN));
+                        tooltip.add(Component.translatable("item.dghhealthcraft.blocker_injection.tooltip.stabilize")
+                                        .withStyle(ChatFormatting.WHITE));
+                        tooltip.add(Component.translatable("item.dghhealthcraft.blocker_injection.tooltip.zombie_virus")
+                                        .withStyle(ChatFormatting.AQUA));
+                        tooltip.add(Component.translatable("item.dghhealthcraft.blocker_injection.tooltip.zombification")
+                                        .withStyle(ChatFormatting.AQUA));
+                        tooltip.add(Component.translatable("item.dghhealthcraft.blocker_injection.tooltip.require")
+                                        .withStyle(ChatFormatting.WHITE));
+                        tooltip.add(Component.translatable("item.dghhealthcraft.blocker_injection.tooltip.offhand")
+                                        .withStyle(ChatFormatting.AQUA));
                         tooltip.add(Component
                                         .translatable("item.dghhealthcraft.blocker_injection.remaining_uses",
                                                         remainingUses)
@@ -66,8 +74,14 @@ public class InjectionItem extends Item {
                 }
                 // ==================== 利巴韦林注射液 ====================
                 else if (item == DghHModItems.RIBAVIRIN_INJECTION.get()) {
-                        tooltip.add(Component.translatable("item.dghhealthcraft.ribavirin_injection.tooltip.usage")
-                                        .withStyle(ChatFormatting.GREEN));
+                        tooltip.add(Component.translatable("item.dghhealthcraft.ribavirin_injection.tooltip.treat")
+                                        .withStyle(ChatFormatting.WHITE));
+                        tooltip.add(Component.translatable("item.dghhealthcraft.ribavirin_injection.tooltip.urti")
+                                        .withStyle(ChatFormatting.AQUA));
+                        tooltip.add(Component.translatable("item.dghhealthcraft.ribavirin_injection.tooltip.require")
+                                        .withStyle(ChatFormatting.WHITE));
+                        tooltip.add(Component.translatable("item.dghhealthcraft.ribavirin_injection.tooltip.offhand")
+                                        .withStyle(ChatFormatting.AQUA));
                         tooltip.add(Component
                                         .translatable("item.dghhealthcraft.ribavirin_injection.remaining_uses",
                                                         remainingUses)

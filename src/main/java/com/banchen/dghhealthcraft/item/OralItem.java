@@ -103,24 +103,14 @@ public class OralItem extends Item {
         // ==================== 口服靶向剂 ====================
         if (item == DghHModItems.ORAL_TARGETED_AGENT.get()) {
             int reductionPercent = (int) (Config.TARGETED_AGENT_DETERIORATION_REDUCTION * 100);
-            
-            // 主要效果说明
-            tooltip.add(Component.translatable("item.dghhealthcraft.oral_targeted_agent.tooltip")
-                    .withStyle(ChatFormatting.DARK_PURPLE));
-            
-            // 缓解效果百分比
-            tooltip.add(Component.translatable("item.dghhealthcraft.oral_targeted_agent.reduction", reductionPercent)
-                    .withStyle(ChatFormatting.GREEN));
-            
-            // 适用症状标题
-            tooltip.add(Component.translatable("item.dghhealthcraft.oral_targeted_agent.applies_to")
-                    .withStyle(ChatFormatting.GRAY));
-            
-            // 适用症状列表
-            tooltip.add(Component.translatable("item.dghhealthcraft.oral_targeted_agent.applies_zombie_virus")
-                    .withStyle(ChatFormatting.DARK_GRAY));
-            tooltip.add(Component.translatable("item.dghhealthcraft.oral_targeted_agent.applies_zombification")
-                    .withStyle(ChatFormatting.DARK_GRAY));
+            tooltip.add(Component.translatable("item.dghhealthcraft.oral_targeted_agent.tooltip.stabilize")
+                .withStyle(ChatFormatting.WHITE));
+            tooltip.add(Component.translatable("item.dghhealthcraft.oral_targeted_agent.tooltip.zombie_virus")
+                .withStyle(ChatFormatting.AQUA));
+            tooltip.add(Component.translatable("item.dghhealthcraft.oral_targeted_agent.tooltip.zombification")
+                .withStyle(ChatFormatting.AQUA));
+            tooltip.add(Component.translatable("item.dghhealthcraft.oral_targeted_agent.tooltip.reduction",
+                reductionPercent).withStyle(ChatFormatting.GREEN));
             
             // 冷却时间
             int cooldownSeconds = Config.CAPSULE_EFFECT_DELAY_SECONDS;
@@ -131,18 +121,12 @@ public class OralItem extends Item {
         // ==================== 口服镇静剂 ====================
         else if (item == DghHModItems.ORAL_SEDATIVE.get()) {
             int reliefPercent = (int) ((1 - Config.SEDATIVE_PTSD_RELIEF_FACTOR) * 100);
-            
-            // 主要效果说明
-            tooltip.add(Component.translatable("item.dghhealthcraft.oral_sedative.tooltip")
-                    .withStyle(ChatFormatting.BLUE));
-            
-            // 详细说明
-            tooltip.add(Component.translatable("item.dghhealthcraft.oral_sedative.tooltip.detail")
-                    .withStyle(ChatFormatting.GRAY));
-            
-            // 缓解效果百分比
-            tooltip.add(Component.translatable("item.dghhealthcraft.oral_sedative.relief_amount", reliefPercent)
-                    .withStyle(ChatFormatting.GREEN));
+            tooltip.add(Component.translatable("item.dghhealthcraft.oral_sedative.tooltip.stabilize")
+                .withStyle(ChatFormatting.WHITE));
+            tooltip.add(Component.translatable("item.dghhealthcraft.oral_sedative.tooltip.ptsd")
+                .withStyle(ChatFormatting.AQUA));
+            tooltip.add(Component.translatable("item.dghhealthcraft.oral_sedative.tooltip.relief", reliefPercent)
+                .withStyle(ChatFormatting.GREEN));
             
             // 冷却时间
             int cooldownSeconds = Config.CAPSULE_EFFECT_DELAY_SECONDS;

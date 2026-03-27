@@ -117,59 +117,34 @@ public class UniversalSyringeItem extends Item {
 
         // ==================== 干净药针 ====================
         if (!isContaminated) {
-            tooltip.add(Component.translatable("item.dghhealthcraft.syringe.tooltip")
-                    .withStyle(ChatFormatting.GRAY));
-
-            // 添加使用提示
-            tooltip.add(Component.literal(" ")
-                    .append(Component.translatable("item.dghhealthcraft.syringe.usage_hint"))
-                    .withStyle(ChatFormatting.DARK_GREEN));
-
-            // 冷却时间提示
-            int cooldownSeconds = Config.RIBAVIRIN_COOLDOWN_SECONDS;
-            tooltip.add(Component.translatable("item.dghhealthcraft.syringe.cooldown", cooldownSeconds)
-                    .withStyle(ChatFormatting.DARK_GRAY));
+            tooltip.add(Component.translatable("item.dghhealthcraft.syringe.tooltip.inject")
+                .withStyle(ChatFormatting.AQUA));
+            tooltip.add(Component.translatable("item.dghhealthcraft.syringe.tooltip.require")
+                .withStyle(ChatFormatting.WHITE));
+            tooltip.add(Component.translatable("item.dghhealthcraft.syringe.tooltip.equip_medicine")
+                .withStyle(ChatFormatting.AQUA));
         }
 
         // ==================== 受污染药针 ====================
         else {
-            tooltip.add(Component.translatable("item.dghhealthcraft.contaminated_syringe.tooltip")
-                    .withStyle(ChatFormatting.RED));
-
-            // 显示感染风险概率
-            tooltip.add(Component.literal(" ")
-                    .append(Component.translatable("item.dghhealthcraft.contaminated_syringe.infection_risks"))
-                    .withStyle(ChatFormatting.GOLD));
+            tooltip.add(Component.translatable("item.dghhealthcraft.contaminated_syringe.tooltip.inject")
+                .withStyle(ChatFormatting.AQUA));
+            tooltip.add(Component.translatable("item.dghhealthcraft.contaminated_syringe.tooltip.require")
+                .withStyle(ChatFormatting.WHITE));
+            tooltip.add(Component.translatable("item.dghhealthcraft.contaminated_syringe.tooltip.equip_medicine")
+                .withStyle(ChatFormatting.AQUA));
+            tooltip.add(Component.translatable("item.dghhealthcraft.contaminated_syringe.tooltip.cause")
+                .withStyle(ChatFormatting.WHITE));
 
             // HIV 感染概率
             int hivChancePercent = (int) (Config.AIDS_CONTAMINATED_SYRINGE_CHANCE * 100);
-            tooltip.add(Component.literal("  • ")
-                    .append(Component.translatable("item.dghhealthcraft.contaminated_syringe.hiv_risk",
-                            hivChancePercent))
-                    .withStyle(ChatFormatting.DARK_RED));
+                tooltip.add(Component.translatable("item.dghhealthcraft.contaminated_syringe.tooltip.hiv_risk",
+                    hivChancePercent).withStyle(ChatFormatting.RED));
 
             // 脓毒症感染概率
             int sepsisChancePercent = (int) (Config.SEPSIS_CONTAMINATED_SYRINGE_CHANCE * 100);
-            tooltip.add(Component.literal("  • ")
-                    .append(Component.translatable("item.dghhealthcraft.contaminated_syringe.sepsis_risk",
-                            sepsisChancePercent))
-                    .withStyle(ChatFormatting.DARK_RED));
-
-            // 尸毒感染概率
-            int corpsePoisonChancePercent = (int) (Config.CORPSE_POISON_UNDEAD_ATTACK_CHANCE * 100);
-            tooltip.add(Component.literal("  • ")
-                    .append(Component.translatable("item.dghhealthcraft.contaminated_syringe.corpse_poison_risk",
-                            corpsePoisonChancePercent))
-                    .withStyle(ChatFormatting.DARK_RED));
-
-            // 阻断剂保护提示
-            tooltip.add(Component.translatable("item.dghhealthcraft.contaminated_syringe.blocker_protection")
-                    .withStyle(ChatFormatting.DARK_GREEN));
-
-            // 冷却时间
-            int cooldownSeconds = Config.RIBAVIRIN_COOLDOWN_SECONDS;
-            tooltip.add(Component.translatable("item.dghhealthcraft.syringe.cooldown", cooldownSeconds)
-                    .withStyle(ChatFormatting.DARK_GRAY));
+                tooltip.add(Component.translatable("item.dghhealthcraft.contaminated_syringe.tooltip.sepsis_risk",
+                    sepsisChancePercent).withStyle(ChatFormatting.RED));
         }
     }
 }

@@ -11,6 +11,8 @@ import com.banchen.dghhealthcraft.registry.DghHModItems;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
+import net.minecraft.network.chat.TextColor;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
@@ -140,30 +142,40 @@ public class CapsuleItem extends Item {
         super.appendHoverText(stack, level, tooltip, flag);
 
         Item item = stack.getItem();
+        Style titleStyle = Style.EMPTY.withColor(TextColor.fromRgb(0xFCFCFC));
+        Style contentStyle = Style.EMPTY.withColor(TextColor.fromRgb(0x5454FC));
 
         // ==================== 拉米夫定胶囊 ====================
         if (item == DghHModItems.LAMIVUDINE_CAPSULE.get()) {
             int cureChancePercent = (int) (Config.LAMIVUDINE_AIDS_CURE_CHANCE * 100);
-            tooltip.add(Component.translatable("item.dghhealthcraft.lamivudine_capsule.tooltip", cureChancePercent)
-                    .withStyle(ChatFormatting.GREEN));
+            tooltip.add(Component.translatable("item.dghhealthcraft.lamivudine_capsule.tooltip.treat")
+                .withStyle(titleStyle));
+            tooltip.add(Component.translatable("item.dghhealthcraft.lamivudine_capsule.tooltip.aids", cureChancePercent)
+                .withStyle(contentStyle));
         }
 
         // ==================== 右美沙芬胶囊 ====================
         else if (item == DghHModItems.DEXTROMETHORPHAN_CAPSULE.get()) {
             int mildCurePercent = (int) (Config.DEXTROMETHORPHAN_MILD_CURE_CHANCE * 100);
             int moderateToMildPercent = (int) (Config.DEXTROMETHORPHAN_MODERATE_TO_MILD_CHANCE * 100);
-            tooltip.add(Component.translatable("item.dghhealthcraft.dextromethorphan_capsule.effect",
-                    mildCurePercent, moderateToMildPercent)
-                    .withStyle(ChatFormatting.AQUA));
+            tooltip.add(Component.translatable("item.dghhealthcraft.dextromethorphan_capsule.tooltip.treat")
+                .withStyle(titleStyle));
+            tooltip.add(Component.translatable("item.dghhealthcraft.dextromethorphan_capsule.tooltip.mild",
+                mildCurePercent)
+                .withStyle(contentStyle));
+            tooltip.add(Component.translatable("item.dghhealthcraft.dextromethorphan_capsule.tooltip.stabilize")
+                .withStyle(titleStyle));
+            tooltip.add(Component.translatable("item.dghhealthcraft.dextromethorphan_capsule.tooltip.moderate",
+                moderateToMildPercent)
+                .withStyle(contentStyle));
         }
 
         // ==================== 布洛芬胶囊 ====================
         else if (item == DghHModItems.IBUPROFEN_CAPSULE.get()) {
-            tooltip.add(Component.translatable("item.dghhealthcraft.ibuprofen_capsule.tooltip")
-                    .withStyle(ChatFormatting.GOLD));
-            int durationSeconds = Config.PTSD_EFFECT_DURATION_TICKS / 20;
-            tooltip.add(Component.translatable("item.dghhealthcraft.ibuprofen_capsule.duration", durationSeconds)
-                    .withStyle(ChatFormatting.GRAY));
+            tooltip.add(Component.translatable("item.dghhealthcraft.ibuprofen_capsule.tooltip.stabilize")
+                .withStyle(ChatFormatting.WHITE));
+            tooltip.add(Component.translatable("item.dghhealthcraft.ibuprofen_capsule.tooltip.urti")
+                .withStyle(ChatFormatting.AQUA));
         }
     }
 }
