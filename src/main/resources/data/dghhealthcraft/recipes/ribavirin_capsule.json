@@ -1,0 +1,5 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [ { "item": "minecraft:sugar" }, { "item": "minecraft:glow_berries" } ],
+  "result": { "item": "dghhealthcraft:ribavirin_capsule", "count": 1 }
+}

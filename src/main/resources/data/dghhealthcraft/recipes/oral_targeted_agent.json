@@ -1,0 +1,5 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [ { "item": "minecraft:potion" }, { "item": "minecraft:sugar" } ],
+  "result": { "item": "dghhealthcraft:oral_targeted_agent", "count": 1 }
+}
