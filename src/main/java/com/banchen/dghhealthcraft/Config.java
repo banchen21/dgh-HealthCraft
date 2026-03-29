@@ -737,37 +737,44 @@ public class Config {
 
                         foodNutritionWater = builder
                                         .comment("食物水分含量配置（格式：item_id=value）")
-                                        .defineList("water", new ArrayList<>(),
+                                        .defineList("water", java.util.Arrays.asList(
+                                                        "minecraft:apple=10", "minecraft:melon_slice=18", "minecraft:sweet_berries=6", "minecraft:glow_berries=6", "minecraft:milk_bucket=35", "minecraft:mushroom_stew=25", "minecraft:rabbit_stew=20", "minecraft:beetroot_soup=25", "minecraft:honey_bottle=12", "minecraft:chorus_fruit=8", "minecraft:suspicious_stew=15", "minecraft:potion=40"),
                                                         o -> o instanceof String && ((String) o).contains("="));
 
                         foodNutritionSugar = builder
                                         .comment("食物糖分含量配置（格式：item_id=value）")
-                                        .defineList("sugar", new ArrayList<>(),
+                                        .defineList("sugar", java.util.Arrays.asList(
+                                                        "minecraft:apple=5", "minecraft:cookie=25", "minecraft:cake=35", "minecraft:pumpkin_pie=28", "minecraft:sweet_berries=10", "minecraft:glow_berries=10", "minecraft:honey_bottle=30", "minecraft:melon_slice=6", "minecraft:golden_apple=15", "minecraft:enchanted_golden_apple=25"),
                                                         o -> o instanceof String && ((String) o).contains("="));
 
                         foodNutritionFat = builder
                                         .comment("食物脂肪含量配置（格式：item_id=value）")
-                                        .defineList("fat", new ArrayList<>(),
+                                        .defineList("fat", java.util.Arrays.asList(
+                                                        "minecraft:porkchop=10", "minecraft:cooked_porkchop=16", "minecraft:beef=10", "minecraft:cooked_beef=16", "minecraft:mutton=8", "minecraft:cooked_mutton=14", "minecraft:salmon=6", "minecraft:cooked_salmon=10", "minecraft:rotten_flesh=5", "minecraft:cod=4", "minecraft:cooked_cod=7", "minecraft:cookie=8"),
                                                         o -> o instanceof String && ((String) o).contains("="));
 
                         foodNutritionProtein = builder
                                         .comment("食物蛋白质含量配置（格式：item_id=value）")
-                                        .defineList("protein", new ArrayList<>(),
+                                        .defineList("protein", java.util.Arrays.asList(
+                                                        "minecraft:cooked_beef=28", "minecraft:cooked_porkchop=28", "minecraft:cooked_mutton=24", "minecraft:cooked_chicken=22", "minecraft:cooked_salmon=20", "minecraft:cooked_cod=18", "minecraft:cooked_rabbit=25", "minecraft:egg=12", "minecraft:milk_bucket=15", "minecraft:rabbit_stew=20", "minecraft:rotten_flesh=4"),
                                                         o -> o instanceof String && ((String) o).contains("="));
 
                         foodNutritionSalt = builder
                                         .comment("食物盐分含量配置（格式：item_id=value）")
-                                        .defineList("salt", new ArrayList<>(),
+                                        .defineList("salt", java.util.Arrays.asList(
+                                                        "minecraft:bread=5", "minecraft:cooked_beef=3", "minecraft:cooked_porkchop=3", "minecraft:cooked_chicken=3", "minecraft:dried_kelp=12", "minecraft:cooked_mutton=2", "minecraft:cooked_salmon=2", "minecraft:pumpkin_pie=4"),
                                                         o -> o instanceof String && ((String) o).contains("="));
 
                         foodNutritionVitamin = builder
                                         .comment("食物维生素含量配置（格式：item_id=value）")
-                                        .defineList("vitamin", new ArrayList<>(),
+                                        .defineList("vitamin", java.util.Arrays.asList(
+                                                        "minecraft:apple=18", "minecraft:golden_apple=35", "minecraft:enchanted_golden_apple=60", "minecraft:carrot=12", "minecraft:golden_carrot=25", "minecraft:melon_slice=12", "minecraft:sweet_berries=8", "minecraft:beetroot=10", "minecraft:glow_berries=8", "minecraft:brown_mushroom=4", "minecraft:red_mushroom=4"),
                                                         o -> o instanceof String && ((String) o).contains("="));
 
                         foodNutritionFiber = builder
                                         .comment("食物膳食纤维含量配置（格式：item_id=value）")
-                                        .defineList("fiber", new ArrayList<>(),
+                                        .defineList("fiber", java.util.Arrays.asList(
+                                                        "minecraft:bread=18", "minecraft:baked_potato=12", "minecraft:carrot=15", "minecraft:beetroot=12", "minecraft:dried_kelp=10", "minecraft:brown_mushroom=6", "minecraft:red_mushroom=6", "minecraft:chorus_fruit=10"),
                                                         o -> o instanceof String && ((String) o).contains("="));
 
                         builder.pop();
